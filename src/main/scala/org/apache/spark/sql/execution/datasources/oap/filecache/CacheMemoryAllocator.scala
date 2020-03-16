@@ -27,7 +27,7 @@ import org.apache.spark.sql.internal.oap.OapConf
  */
 private[filecache] class CacheMemoryAllocator(sparkEnv: SparkEnv)
   extends Logging {
-  private val separateMemory = checkSeparateMemory()
+  private val _separateMemory = checkSeparateMemory()
   private val (memoryManager, indexMemoryManager) = init()
   private val (_dataCacheMemory, _indexCacheMemory, _cacheGuardianMemory) = calculateSizes()
 
@@ -50,7 +50,7 @@ private[filecache] class CacheMemoryAllocator(sparkEnv: SparkEnv)
   }
   private def calculateSizes(): (Long, Long, Long) = {
     // TO DO: make the 0.9 : 0.1 ration configurable
-    if (separateMemory) {
+    if (_separateMemory) {
       ((memoryManager.memorySize * 0.9).toLong, (indexMemoryManager.memorySize * 0.9).toLong,
         (memoryManager.memorySize * 0.1).toLong + (indexMemoryManager.memorySize * 0.1).toLong)
     } else {
@@ -68,7 +68,7 @@ private[filecache] class CacheMemoryAllocator(sparkEnv: SparkEnv)
   }
 
   private def init(): (MemoryManager, MemoryManager) = {
-    if (separateMemory) {
+    if (_separateMemory) {
       val dataManager = MemoryManager(sparkEnv, OapConf.OAP_MIX_DATA_MEMORY_MANAGER)
       val indexManager = MemoryManager(sparkEnv, OapConf.OAP_MIX_INDEX_MEMORY_MANAGER)
       if (indexManager.getClass.equals(dataManager.getClass)) {
@@ -88,7 +88,7 @@ private[filecache] class CacheMemoryAllocator(sparkEnv: SparkEnv)
   }
 
   def allocateIndexMemory(size: Long): MemoryBlockHolder = {
-    if (separateMemory) {
+    if (_separateMemory) {
       indexMemoryManager.allocate(size)
     } else {
       memoryManager.allocate(size)
@@ -100,7 +100,7 @@ private[filecache] class CacheMemoryAllocator(sparkEnv: SparkEnv)
   }
 
   def freeIndexMemory(block: MemoryBlockHolder): Unit = {
-    if (separateMemory) {
+    if (_separateMemory) {
       indexMemoryManager.free(block)
     } else {
       memoryManager.free(block)
@@ -114,7 +114,7 @@ private[filecache] class CacheMemoryAllocator(sparkEnv: SparkEnv)
 
   def stop(): Unit = {
     memoryManager.stop()
-    if (separateMemory) {
+    if (_separateMemory) {
       indexMemoryManager.stop()
     }
   }
@@ -122,6 +122,7 @@ private[filecache] class CacheMemoryAllocator(sparkEnv: SparkEnv)
   def dataCacheMemory: Long = _dataCacheMemory
   def indexCacheMemory: Long = _indexCacheMemory
   def cacheGuardianMemory: Long = _cacheGuardianMemory
+  def separateMemory: Boolean = _separateMemory
 }
 
 private[sql] object CacheMemoryAllocator {
