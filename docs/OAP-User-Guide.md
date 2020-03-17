@@ -166,9 +166,24 @@ Before configuring in OAP to use DCPMM cache, you need to make sure the followin
 - [Memkind](http://memkind.github.io/memkind/) library has been installed on every cluster worker nodes. Please use the latest Memkind version. You can compile Memkind based on your system. We have a pre-build binary for x86 64bit CentOS Linux and you can download [libmemkind.so.0](https://github.com/Intel-bigdata/OAP/releases/download/v0.6.1-spark-2.4.4/libmemkind.so.0) and put the file to `/lib64/` directory in each worker node in cluster. Memkind library depends on libnuma at the runtime. You need to make sure libnuma already exists in worker node system.
 
 ##### Configure for NUMA
-To achieve the optimum performance, we need to configure NUMA for binding executor to NUMA node and try access the right DCPMM device on the same NUMA node. You need install numactl on each worker node. For example, on CentOS, run following command to install numactl.
+- To achieve the optimum performance, we need to configure NUMA for binding executor to NUMA node and try access the right DCPMM device on the same NUMA node. You need install numactl on each worker node. For example, on CentOS, run following command to install numactl.
 
 ```yum install numactl -y ```
+
+- Numa binding when launch the yarn container
+Considering the performance bring by numa binding, a patch in spark yarn side is suggested for apply. Currently we target to spark 2.4.4.
+Patch to upstream spark source code is supported. You can find the built spark under spark_source which is located at same directory with OAP
+```
+cd scripts
+./apply_patch_to_spark.sh -v SPARK_VERSION
+mvn clean package -Ppersistent-memory,numa-binding -DskipTests
+```
+Patch to the local customized spark. Notice that some conflicts need resolve and copy the patched file to patched_file directory manually for this usage.
+```
+cd scripts
+./apply_patch_to_spark.sh -v SPARK_VERSION -c YOUR_SPARK_DIR
+mvn clean package -Ppersistent-memory,numa-binding -DskipTests
+```
 
 ##### Configure for DCPMM 
 Create a configuration file named “persistent-memory.xml” under "$SPARK_HOME/conf/" if it doesn't exist. Use below contents as a template and change the “initialPath” to your mounted paths for DCPMM devices. 
@@ -191,6 +206,7 @@ Make the following configuration changes in Spark configuration file `$SPARK_HOM
 ```
 spark.executor.instances                                   6               # 2x number of your worker nodes
 spark.yarn.numa.enabled                                    true            # enable numa
+spark.yarn.numa.num                                        2               # total numa number 
 spark.executorEnv.MEMKIND_ARENA_NUM_PER_KIND               1
 spark.memory.offHeap.enabled                               false
 spark.speculation                                          false
