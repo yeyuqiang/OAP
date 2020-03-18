@@ -21,7 +21,6 @@ import java.util.concurrent.{Callable, Executors, TimeUnit}
 
 import org.scalatest.BeforeAndAfterEach
 
-import org.apache.spark.sql.internal.oap.OapConf
 import org.apache.spark.sql.oap.OapRuntime
 import org.apache.spark.sql.test.oap.SharedOapContext
 import org.apache.spark.util.Utils
@@ -45,6 +44,7 @@ class IndexDataCacheSeparationSuite extends SharedOapContext with BeforeAndAfter
 
   oapSparkConf.set("spark.sql.oap.index.data.cache.separation.enable", "true")
   oapSparkConf.set("spark.sql.oap.fiberCache.memory.manager", "mix")
+  oapSparkConf.set("spark.oap.cache.strategy", "mix")
   oapSparkConf.set("spark.sql.oap.mix.data.memory.manager", "tmp")
   // here we set a larger size for tmp memory manager
   // also we low the data size in some unit tests
@@ -542,7 +542,7 @@ class IndexDataCacheSeparationSuite extends SharedOapContext with BeforeAndAfter
     // make fiber in use the 1st element in release queue.
     fiberCacheManager.releaseFiber(indexFiberInUse)
 
-    (1 to indexMemorySizeInMB * 2).foreach { i =>
+    (1 to indexMemorySizeInMB).foreach { i =>
       val data = generateData(mbSize)
       val fiber = TestDataFiberId(
         () => fiberCacheManager.toDataFiberCache(data),

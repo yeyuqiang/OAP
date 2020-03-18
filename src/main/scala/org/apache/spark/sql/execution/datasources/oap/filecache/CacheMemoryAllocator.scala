@@ -29,7 +29,8 @@ private[filecache] class CacheMemoryAllocator(sparkEnv: SparkEnv)
   extends Logging {
   private val _separateMemory = checkSeparateMemory()
   private val (memoryManager, indexMemoryManager) = init()
-  private val (_dataCacheMemory, _indexCacheMemory, _cacheGuardianMemory) = calculateSizes()
+  private val (_dataCacheMemory, _indexCacheMemory,
+              _dataCacheGuardianMemory, _indexCacheGuardianMemory) = calculateSizes()
 
   private def checkSeparateMemory(): Boolean = {
     val separateCache = sparkEnv.conf.getBoolean(
@@ -48,11 +49,11 @@ private[filecache] class CacheMemoryAllocator(sparkEnv: SparkEnv)
       case _ => false
     }
   }
-  private def calculateSizes(): (Long, Long, Long) = {
+  private def calculateSizes(): (Long, Long, Long, Long) = {
     // TO DO: make the 0.9 : 0.1 ration configurable
     if (_separateMemory) {
       ((memoryManager.memorySize * 0.9).toLong, (indexMemoryManager.memorySize * 0.9).toLong,
-        (memoryManager.memorySize * 0.1).toLong + (indexMemoryManager.memorySize * 0.1).toLong)
+        (memoryManager.memorySize * 0.1).toLong, (indexMemoryManager.memorySize * 0.1).toLong)
     } else {
       val cacheRatio = sparkEnv.conf.getDouble(
         OapConf.OAP_DATAFIBER_USE_FIBERCACHE_RATIO.key,
@@ -63,7 +64,7 @@ private[filecache] class CacheMemoryAllocator(sparkEnv: SparkEnv)
       val memorySize = memoryManager.memorySize
       ((memorySize * 0.9 * cacheRatio).toLong,
         (memorySize * 0.9 * (1 - cacheRatio)).toLong,
-        (memorySize * 0.1).toLong)
+        (memorySize * 0.1).toLong, 0)
     }
   }
 
@@ -121,7 +122,8 @@ private[filecache] class CacheMemoryAllocator(sparkEnv: SparkEnv)
 
   def dataCacheMemory: Long = _dataCacheMemory
   def indexCacheMemory: Long = _indexCacheMemory
-  def cacheGuardianMemory: Long = _cacheGuardianMemory
+  def dataCacheGuardianMemory: Long = _dataCacheGuardianMemory
+  def indexCacheGuardianMemory: Long = _indexCacheGuardianMemory
   def separateMemory: Boolean = _separateMemory
 }
 

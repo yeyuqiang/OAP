@@ -37,6 +37,12 @@ import org.apache.spark.util.collection.OapBitSet
 
 private[sql] class FiberCacheManager(
     sparkEnv: SparkEnv) extends Logging {
+  private val GUAVA_CACHE = "guava"
+  private val SIMPLE_CACHE = "simple"
+  private val NO_EVICT_CACHE = "noevict"
+  private val VMEM_CACHE = "vmem"
+  private val MIX_CACHE = "mix"
+  private val DEFAULT_CACHE_STRATEGY = GUAVA_CACHE
 
   private var _dataCacheCompressEnable = sparkEnv.conf.get(
     OapConf.OAP_ENABLE_DATA_FIBER_CACHE_COMPRESSION)
@@ -52,7 +58,8 @@ private[sql] class FiberCacheManager(
 
   def dataCacheMemory: Long = cacheAllocator.dataCacheMemory
   def indexCacheMemory: Long = cacheAllocator.indexCacheMemory
-  def cacheGuardianMemory: Long = cacheAllocator.cacheGuardianMemory
+  def dataCacheGuardianMemory: Long = cacheAllocator.dataCacheGuardianMemory
+  def indexCacheGuardianMemory: Long = cacheAllocator.indexCacheGuardianMemory
 
   def dataCacheCompressEnable: Boolean = _dataCacheCompressEnable
   def dataCacheCompressionCodec: String = _dataCacheCompressionCodec
@@ -60,35 +67,30 @@ private[sql] class FiberCacheManager(
 
   def dcpmmWaitingThreshold: Long = _dcpmmWaitingThreshold
 
-  private val separateMemory = cacheAllocator.separateMemory
-  private val (cacheBackend, indexCacheBackend) = init()
-
-  private def init(): (OapCache, OapCache) = {
-    if (separateMemory) {
-      val dataCacheBackend = OapCache(sparkEnv, OapConf.OAP_MIX_DATA_CACHE_BACKEND,
-        dataCacheMemory, cacheGuardianMemory, FiberType.DATA);
-      val indexCacheBackend = OapCache(sparkEnv, OapConf.OAP_MIX_INDEX_CACHE_BACKEND,
-        indexCacheMemory, cacheGuardianMemory, FiberType.INDEX);
-      (dataCacheBackend, indexCacheBackend)
+  private val cacheBackend: OapCache = {
+    val cacheName = sparkEnv.conf.get("spark.oap.cache.strategy", DEFAULT_CACHE_STRATEGY)
+    if (cacheName.equals(GUAVA_CACHE)) {
+      new GuavaOapCache(dataCacheMemory, dataCacheGuardianMemory, FiberType.DATA)
+    } else if (cacheName.equals(SIMPLE_CACHE)) {
+      new SimpleOapCache()
+    } else if (cacheName.equals(NO_EVICT_CACHE)) {
+      new NonEvictPMCache(dataCacheMemory, dataCacheGuardianMemory, FiberType.DATA)
+    } else if (cacheName.equals(VMEM_CACHE)) {
+      new VMemCache(FiberType.DATA)
+    } else if (cacheName.equals(MIX_CACHE)) {
+      new MixCache(dataCacheMemory, indexCacheMemory, dataCacheGuardianMemory,
+        indexCacheGuardianMemory, sparkEnv)
     } else {
-      val cacheBackend = OapCache(sparkEnv, OapConf.OAP_FIBERCACHE_STRATEGY,
-        dataCacheMemory + indexCacheMemory, cacheGuardianMemory, FiberType.GENERAL);
-      (cacheBackend, null)
+      throw new OapException(s"Unsupported cache strategy $cacheName")
     }
   }
 
   def stop(): Unit = {
     cacheAllocator.stop()
-    if (separateMemory) {
-      indexCacheBackend.cleanUp()
-    }
     cacheBackend.cleanUp()
   }
 
   if (isDcpmmUsed()) {
-    if (separateMemory) {
-      indexCacheBackend.getCacheGuardian.enableWaitNotifyActive()
-    }
     cacheBackend.getCacheGuardian.enableWaitNotifyActive()
   }
   // NOTE: all members' init should be placed before this line.
@@ -96,25 +98,11 @@ private[sql] class FiberCacheManager(
 
   def get(fiber: FiberId): FiberCache = {
     logDebug(s"Getting Fiber: $fiber")
-    if (separateMemory &&
-      (fiber.isInstanceOf[BTreeFiberId] ||
-        fiber.isInstanceOf[BitmapFiberId] ||
-        fiber.isInstanceOf[TestIndexFiberId])) {
-      indexCacheBackend.get(fiber)
-    } else {
-      cacheBackend.get(fiber)
-    }
+    cacheBackend.get(fiber)
   }
 
   def getIfPresent(fiber: FiberId): FiberCache = {
-    if (separateMemory &&
-      (fiber.isInstanceOf[BTreeFiberId] ||
-        fiber.isInstanceOf[BitmapFiberId] ||
-        fiber.isInstanceOf[TestIndexFiberId])) {
-      indexCacheBackend.getIfPresent(fiber)
-    } else {
-      cacheBackend.getIfPresent(fiber)
-    }
+    cacheBackend.getIfPresent(fiber)
   }
 
   // only for unit test
@@ -211,11 +199,7 @@ private[sql] class FiberCacheManager(
       case BitmapFiberId(_, file, _, _) => file.contains(indexName)
       case _ => false
     }
-    if (separateMemory) {
-      indexCacheBackend.invalidateAll(fiberToBeRemoved)
-    } else {
-      cacheBackend.invalidateAll(fiberToBeRemoved)
-    }
+    cacheBackend.invalidateAll(fiberToBeRemoved)
     logDebug(s"Removed ${fiberToBeRemoved.size} fibers.")
   }
 
@@ -239,40 +223,19 @@ private[sql] class FiberCacheManager(
   }
 
   def releaseFiber(fiber: FiberId): Unit = {
-    if (separateMemory &&
-      (fiber.isInstanceOf[BTreeFiberId] ||
-        fiber.isInstanceOf[BitmapFiberId] ||
-        fiber.isInstanceOf[TestIndexFiberId])) {
-      if (indexCacheBackend.getIfPresent(fiber) != null) {
-        indexCacheBackend.invalidate(fiber)
-      }
-    }
     if (cacheBackend.getIfPresent(fiber) != null) {
       cacheBackend.invalidate(fiber)
     }
   }
 
   // Used by test suite
-  private[oap] def clearAllFibers(): Unit = {
-    if (separateMemory) {
-      indexCacheBackend.cleanUp()
-    }
-    cacheBackend.cleanUp
-  }
+  private[oap] def clearAllFibers(): Unit = cacheBackend.cleanUp
 
-  // TODO: test case, consider data eviction, try not use DataFileMeta which may be costly
+  // TODO: test case, consider data eviction, try not use DataFileMeta which my be costly
   private[sql] def status(): String = {
     logDebug(s"Reporting ${cacheBackend.cacheCount} fibers to the master")
-    val dataFibers = {
-      if (separateMemory) {
-        (indexCacheBackend.getFibers.++(cacheBackend.getFibers)).collect {
-          case fiber: DataFiberId => fiber
-        }
-      } else {
-        cacheBackend.getFibers.collect {
-          case fiber: DataFiberId => fiber
-        }
-      }
+    val dataFibers = cacheBackend.getFibers.collect {
+      case fiber: DataFiberId => fiber
     }
 
     // Use a bit set to represent current cache status of one file.
@@ -295,67 +258,25 @@ private[sql] class FiberCacheManager(
     CacheStatusSerDe.serialize(statusRawData)
   }
 
-  def cacheStats: CacheStats = {
-    if (separateMemory) {
-      indexCacheBackend.cacheStats + cacheBackend.cacheStats
-    } else {
-      cacheBackend.cacheStats
-    }
-  }
+  def cacheStats: CacheStats = cacheBackend.cacheStats
 
-  def cacheSize: Long = {
-    if (separateMemory) {
-      indexCacheBackend.cacheSize + cacheBackend.cacheSize
-    } else {
-      cacheBackend.cacheSize
-    }
-  }
+  def cacheSize: Long = cacheBackend.cacheSize
 
-  def cacheCount: Long = {
-    if (separateMemory) {
-      indexCacheBackend.cacheCount + cacheBackend.cacheCount
-    } else {
-      cacheBackend.cacheCount
-    }
-  }
+  def cacheCount: Long = cacheBackend.cacheCount
 
   // Get count of data cache, used by test suite
-  private[oap] def dataCacheCount: Long = {
-    if (separateMemory) {
-      indexCacheBackend.dataCacheCount + cacheBackend.dataCacheCount
-    } else {
-      cacheBackend.dataCacheCount
-    }
-  }
+  private[oap] def dataCacheCount: Long = cacheBackend.dataCacheCount
 
   // Used by test suite
-  private[filecache] def pendingCount: Int = {
-    if (separateMemory) {
-      indexCacheBackend.pendingFiberCount + cacheBackend.pendingFiberCount
-    } else {
-      cacheBackend.pendingFiberCount
-    }
-  }
+  private[filecache] def pendingCount: Int = cacheBackend.pendingFiberCount
 
-  def pendingSize: Long = {
-    if (separateMemory) {
-      indexCacheBackend.pendingFiberSize + cacheBackend.pendingFiberSize
-    } else {
-      cacheBackend.pendingFiberSize
-    }
-  }
+  def pendingSize: Long = cacheBackend.pendingFiberSize
 
-  def pendingOccupiedSize: Long = {
-    if (separateMemory) {
-      indexCacheBackend.pendingFiberOccupiedSize + cacheBackend.pendingFiberOccupiedSize
-    } else {
-      cacheBackend.pendingFiberOccupiedSize
-    }
-  }
+  def pendingOccupiedSize: Long = cacheBackend.pendingFiberOccupiedSize
 
   // A description of this FiberCacheManager for debugging.
   def toDebugString: String = {
-    s"FiberCacheManager Statistics: { cacheCount=${dataCacheCount}, " +
+    s"FiberCacheManager Statistics: { cacheCount=${cacheBackend.cacheCount}, " +
         s"usedMemory=${Utils.bytesToString(cacheSize)}, ${cacheStats.toDebugString} }"
   }
 }
