@@ -176,7 +176,7 @@ Patch to upstream spark source code is supported. You can find the built spark u
 ```
 cd scripts
 ./apply_patch_to_spark.sh -v SPARK_VERSION
-mvn clean package -Ppersistent-memory,numa-binding -DskipTests
+mvn clean -q package -Ppersistent-memory,numa-binding -DskipTests
 ```
 Patch to the local customized spark. Notice that some conflicts need resolve and copy the patched file to patched_file directory manually for this usage.
 ```
