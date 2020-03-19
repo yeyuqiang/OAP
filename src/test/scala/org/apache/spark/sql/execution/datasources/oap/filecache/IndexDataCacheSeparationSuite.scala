@@ -174,9 +174,9 @@ class IndexDataCacheSeparationSuite extends SharedOapContext with BeforeAndAfter
     indexThreads.foreach(_.start())
     dataThreads.foreach(_.join(10000))
     indexThreads.foreach(_.join(10000))
+    Thread.sleep(1000)
     dataThreads.foreach(t => assert(!t.isAlive))
     indexThreads.foreach(t => assert(!t.isAlive))
-    Thread.sleep(1000)
   }
 
   test("add a very large fiber") {
