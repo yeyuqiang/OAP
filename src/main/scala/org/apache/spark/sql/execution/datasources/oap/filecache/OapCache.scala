@@ -541,9 +541,8 @@ class VMemCache(fiberType: FiberType) extends OapCache with Logging {
 
     if (fiberType == FiberType.INDEX) {
       CacheStats(
-        0, 0, // For index cache, the data fiber metrics should always be zero
-        cacheTotalCount, // indexFiberCount
-        cacheTotalSize, // indexFiberSize
+        0, 0,
+        cacheTotalCount, cacheTotalSize,
         cacheGuardian.pendingFiberCount, // pendingFiberCount
         cacheGuardian.pendingFiberSize, // pendingFiberSize
         0, 0, 0, 0, 0, // For index cache, the data fiber metrics should always be zero
@@ -555,9 +554,8 @@ class VMemCache(fiberType: FiberType) extends OapCache with Logging {
       )
     } else {
       CacheStats(
-        cacheTotalCount, // dataFiberCount
-        cacheTotalSize, // dataFiberSize JNIGet
-        0, 0, // For data cache, the index fiber metrics should always be zero
+        cacheTotalCount, cacheTotalSize,
+        0, 0,
         cacheGuardian.pendingFiberCount, // pendingFiberCount
         cacheGuardian.pendingFiberSize, // pendingFiberSize
         cacheHitCount.get(), // dataFiberHitCount
@@ -672,7 +670,7 @@ class GuavaOapCache(
   }
 
   override def invalidateAll(fibers: Iterable[FiberId]): Unit = {
-    cacheInstance.invalidateAll(fibers.asJava)
+    fibers.foreach(invalidate)
   }
 
   override def cacheSize: Long = _cacheSize.get()
@@ -681,7 +679,7 @@ class GuavaOapCache(
     val stats = cacheInstance.stats()
     if (fiberType == FiberType.INDEX) {
       CacheStats(
-        0, 0, // For index cache, the data fiber metrics should always be zero
+        dataFiberCount.get(), dataFiberSize.get(),
         indexFiberCount.get(), indexFiberSize.get(),
         pendingFiberCount, cacheGuardian.pendingFiberSize,
         0, 0, 0, 0, 0, // For index cache, the data fiber metrics should always be zero
@@ -694,7 +692,7 @@ class GuavaOapCache(
     } else {
       CacheStats(
         dataFiberCount.get(), dataFiberSize.get(),
-        0, 0, // For data cache, the index fiber metrics should always be zero
+        indexFiberCount.get(), indexFiberSize.get(),
         pendingFiberCount, cacheGuardian.pendingFiberSize,
         stats.hitCount(),
         stats.missCount(),
