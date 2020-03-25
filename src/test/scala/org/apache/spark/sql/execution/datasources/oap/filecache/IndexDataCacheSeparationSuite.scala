@@ -43,12 +43,7 @@ class IndexDataCacheSeparationSuite extends SharedOapContext with BeforeAndAfter
   }
 
   oapSparkConf.set("spark.sql.oap.index.data.cache.separation.enable", "true")
-  oapSparkConf.set("spark.sql.oap.fiberCache.memory.manager", "mix")
   oapSparkConf.set("spark.oap.cache.strategy", "mix")
-  oapSparkConf.set("spark.sql.oap.mix.data.memory.manager", "tmp")
-  // here we set a larger size for tmp memory manager
-  // also we low the data size in some unit tests
-  oapSparkConf.set("spark.sql.oap.cache.guardian.memory.size", "1024m")
 
   private def fiberCacheManager = OapRuntime.getOrCreate.fiberCacheManager
 

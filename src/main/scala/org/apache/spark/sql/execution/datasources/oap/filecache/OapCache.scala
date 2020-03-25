@@ -729,6 +729,7 @@ class MixCache(dataCacheMemory: Long,
                indexCacheMemory: Long,
                dataCacheGuardianMemory: Long,
                indexCacheGuardianMemory: Long,
+               separation: Boolean,
                sparkEnv: SparkEnv)
   extends OapCache with Logging {
 
@@ -748,12 +749,20 @@ class MixCache(dataCacheMemory: Long,
   }
 
   private def init(): (OapCache, OapCache) = {
-    isCompatibleWithMemoryManager()
-    val dataCacheBackend = OapCache(sparkEnv, OapConf.OAP_MIX_DATA_CACHE_BACKEND,
-      dataCacheMemory, dataCacheGuardianMemory, FiberType.DATA);
-    val indexCacheBackend = OapCache(sparkEnv, OapConf.OAP_MIX_INDEX_CACHE_BACKEND,
-      indexCacheMemory, indexCacheGuardianMemory, FiberType.INDEX);
-    (dataCacheBackend, indexCacheBackend)
+    if (!separation) {
+      isCompatibleWithMemoryManager()
+      val dataCacheBackend = OapCache(sparkEnv, OapConf.OAP_MIX_DATA_CACHE_BACKEND,
+        dataCacheMemory, dataCacheGuardianMemory, FiberType.DATA);
+      val indexCacheBackend = OapCache(sparkEnv, OapConf.OAP_MIX_INDEX_CACHE_BACKEND,
+        indexCacheMemory, indexCacheGuardianMemory, FiberType.INDEX);
+      (dataCacheBackend, indexCacheBackend)
+    } else {
+      val dataCacheBackend = new GuavaOapCache(dataCacheMemory, dataCacheGuardianMemory,
+        FiberType.DATA)
+      val indexCacheBackend = new GuavaOapCache(indexCacheMemory, indexCacheGuardianMemory,
+        FiberType.INDEX)
+      (dataCacheBackend, indexCacheBackend)
+    }
   }
 
   override def get(fiberId: FiberId): FiberCache = {
