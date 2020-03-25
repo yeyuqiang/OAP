@@ -33,18 +33,17 @@ private[filecache] class CacheMemoryAllocator(sparkEnv: SparkEnv)
               _dataCacheGuardianMemory, _indexCacheGuardianMemory) = calculateSizes()
 
   private def checkSeparateMemory(): Boolean = {
-    val separateCache = sparkEnv.conf.getBoolean(
-      OapConf.OAP_INDEX_DATA_SEPARATION_ENABLE.key,
-      OapConf.OAP_INDEX_DATA_SEPARATION_ENABLE.defaultValue.get
-    )
     val memoryManagerOpt =
       sparkEnv.conf.get(OapConf.OAP_FIBERCACHE_MEMORY_MANAGER.key, "offheap").toLowerCase
+    val cacheName =
+      sparkEnv.conf.get(OapConf.OAP_FIBERCACHE_STRATEGY.key, "guava").toLowerCase
+
     memoryManagerOpt match {
-      case "mix" => if (separateCache) {
+      case ("mix") => if (cacheName.equals("mix")) {
         true
       } else {
         throw new UnsupportedOperationException("In order to enable mix memory manager," +
-          "you need to set to spark.sql.oap.index.data.cache.separation.enable to true")
+          "you need also to set to spark.oap.cache.strategy to mix")
       }
       case _ => false
     }

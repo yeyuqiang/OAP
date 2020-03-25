@@ -56,8 +56,8 @@ private[sql] class FiberCacheManager(
   private val cacheAllocator: CacheMemoryAllocator = CacheMemoryAllocator(sparkEnv)
   private val fiberLockManager = new FiberLockManager()
 
-  def dataCacheMemory: Long = cacheAllocator.dataCacheMemory
-  def indexCacheMemory: Long = cacheAllocator.indexCacheMemory
+  var dataCacheMemory: Long = cacheAllocator.dataCacheMemory
+  var indexCacheMemory: Long = cacheAllocator.indexCacheMemory
   def dataCacheGuardianMemory: Long = cacheAllocator.dataCacheGuardianMemory
   def indexCacheGuardianMemory: Long = cacheAllocator.indexCacheGuardianMemory
 
@@ -66,8 +66,13 @@ private[sql] class FiberCacheManager(
   def dataCacheCompressionSize: Int = _dataCacheCompressionSize
 
   def dcpmmWaitingThreshold: Long = _dcpmmWaitingThreshold
+  def inMixMode: Boolean = cacheAllocator.separateMemory
 
   private val cacheBackend: OapCache = {
+    if (!inMixMode) {
+      dataCacheMemory = dataCacheMemory + indexCacheMemory
+    }
+
     val cacheName = sparkEnv.conf.get("spark.oap.cache.strategy", DEFAULT_CACHE_STRATEGY)
     if (cacheName.equals(GUAVA_CACHE)) {
       new GuavaOapCache(dataCacheMemory, dataCacheGuardianMemory, FiberType.DATA)
@@ -78,8 +83,12 @@ private[sql] class FiberCacheManager(
     } else if (cacheName.equals(VMEM_CACHE)) {
       new VMemCache(FiberType.DATA)
     } else if (cacheName.equals(MIX_CACHE)) {
+      val separateCache = sparkEnv.conf.getBoolean(
+        OapConf.OAP_INDEX_DATA_SEPARATION_ENABLE.key,
+        OapConf.OAP_INDEX_DATA_SEPARATION_ENABLE.defaultValue.get
+      )
       new MixCache(dataCacheMemory, indexCacheMemory, dataCacheGuardianMemory,
-        indexCacheGuardianMemory, sparkEnv)
+        indexCacheGuardianMemory, separateCache, sparkEnv)
     } else {
       throw new OapException(s"Unsupported cache strategy $cacheName")
     }
