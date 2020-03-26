@@ -47,8 +47,8 @@ class IndexDataCacheSeparationSuite extends SharedOapContext with BeforeAndAfter
 
   private def fiberCacheManager = OapRuntime.getOrCreate.fiberCacheManager
 
-  private def dataCacheMemorySize = fiberCacheManager.dataCacheMemory
-  private def indexCacheMemorySize = fiberCacheManager.indexCacheMemory
+  private def dataCacheMemorySize = fiberCacheManager.dataCacheMemorySize
+  private def indexCacheMemorySize = fiberCacheManager.indexCacheMemorySize
 
   override def afterEach(): Unit = {
     fiberCacheManager.clearAllFibers()

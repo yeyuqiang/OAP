@@ -29,8 +29,8 @@ private[filecache] class CacheMemoryAllocator(sparkEnv: SparkEnv)
   extends Logging {
   private val _separateMemory = checkSeparateMemory()
   private val (memoryManager, indexMemoryManager) = init()
-  private val (_dataCacheMemory, _indexCacheMemory,
-              _dataCacheGuardianMemory, _indexCacheGuardianMemory) = calculateSizes()
+  private val (_dataCacheMemorySize, _indexCacheMemorySize,
+              _dataCacheGuardianMemorySize, _indexCacheGuardianMemorySize) = calculateSizes()
 
   private def checkSeparateMemory(): Boolean = {
     val memoryManagerOpt =
@@ -119,10 +119,10 @@ private[filecache] class CacheMemoryAllocator(sparkEnv: SparkEnv)
     }
   }
 
-  def dataCacheMemory: Long = _dataCacheMemory
-  def indexCacheMemory: Long = _indexCacheMemory
-  def dataCacheGuardianMemory: Long = _dataCacheGuardianMemory
-  def indexCacheGuardianMemory: Long = _indexCacheGuardianMemory
+  def dataCacheMemorySize: Long = _dataCacheMemorySize
+  def indexCacheMemorySize: Long = _indexCacheMemorySize
+  def dataCacheGuardianMemorySize: Long = _dataCacheGuardianMemorySize
+  def indexCacheGuardianMemorySize: Long = _indexCacheGuardianMemorySize
   def separateMemory: Boolean = _separateMemory
 }
 

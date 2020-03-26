@@ -56,10 +56,10 @@ private[sql] class FiberCacheManager(
   private val cacheAllocator: CacheMemoryAllocator = CacheMemoryAllocator(sparkEnv)
   private val fiberLockManager = new FiberLockManager()
 
-  var dataCacheMemory: Long = cacheAllocator.dataCacheMemory
-  var indexCacheMemory: Long = cacheAllocator.indexCacheMemory
-  def dataCacheGuardianMemory: Long = cacheAllocator.dataCacheGuardianMemory
-  def indexCacheGuardianMemory: Long = cacheAllocator.indexCacheGuardianMemory
+  var dataCacheMemorySize: Long = cacheAllocator.dataCacheMemorySize
+  var indexCacheMemorySize: Long = cacheAllocator.indexCacheMemorySize
+  def dataCacheGuardianMemorySize: Long = cacheAllocator.dataCacheGuardianMemorySize
+  def indexCacheGuardianMemorySize: Long = cacheAllocator.indexCacheGuardianMemorySize
 
   def dataCacheCompressEnable: Boolean = _dataCacheCompressEnable
   def dataCacheCompressionCodec: String = _dataCacheCompressionCodec
@@ -70,16 +70,16 @@ private[sql] class FiberCacheManager(
 
   private val cacheBackend: OapCache = {
     if (!inMixMode) {
-      dataCacheMemory = dataCacheMemory + indexCacheMemory
+      dataCacheMemorySize = dataCacheMemorySize + indexCacheMemorySize
     }
 
     val cacheName = sparkEnv.conf.get("spark.oap.cache.strategy", DEFAULT_CACHE_STRATEGY)
     if (cacheName.equals(GUAVA_CACHE)) {
-      new GuavaOapCache(dataCacheMemory, dataCacheGuardianMemory, FiberType.DATA)
+      new GuavaOapCache(dataCacheMemorySize, dataCacheGuardianMemorySize, FiberType.DATA)
     } else if (cacheName.equals(SIMPLE_CACHE)) {
       new SimpleOapCache()
     } else if (cacheName.equals(NO_EVICT_CACHE)) {
-      new NonEvictPMCache(dataCacheMemory, dataCacheGuardianMemory, FiberType.DATA)
+      new NonEvictPMCache(dataCacheMemorySize, dataCacheGuardianMemorySize, FiberType.DATA)
     } else if (cacheName.equals(VMEM_CACHE)) {
       new VMemCache(FiberType.DATA)
     } else if (cacheName.equals(MIX_CACHE)) {
@@ -87,8 +87,8 @@ private[sql] class FiberCacheManager(
         OapConf.OAP_INDEX_DATA_SEPARATION_ENABLE.key,
         OapConf.OAP_INDEX_DATA_SEPARATION_ENABLE.defaultValue.get
       )
-      new MixCache(dataCacheMemory, indexCacheMemory, dataCacheGuardianMemory,
-        indexCacheGuardianMemory, separateCache, sparkEnv)
+      new MixCache(dataCacheMemorySize, indexCacheMemorySize, dataCacheGuardianMemorySize,
+        indexCacheGuardianMemorySize, separateCache, sparkEnv)
     } else {
       throw new OapException(s"Unsupported cache strategy $cacheName")
     }

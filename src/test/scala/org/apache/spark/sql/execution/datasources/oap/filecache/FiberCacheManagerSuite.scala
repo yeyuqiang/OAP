@@ -42,8 +42,8 @@ class FiberCacheManagerSuite extends SharedOapContext {
 
   private def fiberCacheManager = OapRuntime.getOrCreate.fiberCacheManager
 
-  private def dataCacheMemorySize = fiberCacheManager.dataCacheMemory
-  private def indexCacheMemorySize = fiberCacheManager.indexCacheMemory
+  private def dataCacheMemorySize = fiberCacheManager.dataCacheMemorySize
+  private def indexCacheMemorySize = fiberCacheManager.indexCacheMemorySize
   private def totalMemorySize = dataCacheMemorySize + indexCacheMemorySize
 
   test("unit test") {
