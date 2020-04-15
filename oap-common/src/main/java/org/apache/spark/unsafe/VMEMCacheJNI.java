@@ -2,6 +2,7 @@ package org.apache.spark.unsafe;
 
 import java.nio.ByteBuffer;
 
+import org.apache.spark.util.NativeLibraryLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,7 +18,7 @@ public class VMEMCacheJNI {
 
     static {
         LOG.info("Trying to load the native library from jni...");
-        NativeLoader.loadLibrary(LIBRARY_NAME);
+        NativeLibraryLoader.load(LIBRARY_NAME);
     }
 
     public static synchronized int initialize(String path, long maxSize) {

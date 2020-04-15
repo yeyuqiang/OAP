@@ -31,6 +31,7 @@
   </licenses>
 
   <properties>
+    <oap.common.version>0.1-SNAPSHOT</oap.common.version>
     <!-- Build Properties -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -114,6 +115,11 @@
   </pluginRepositories>
 
   <dependencies>
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>oap-common</artifactId>
+      <version>${oap.common.version}</version>
+    </dependency>
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-plus</artifactId>
@@ -412,12 +418,13 @@
           <shadedClassifierName>with-spark-${spark.internal.version}</shadedClassifierName>
           <artifactSet>
             <includes>
+              <include>org.apache.spark:oap-common</include>
               <include>org.spark-project.spark:unused</include>
               <include>com.google.guava:guava</include>
               <include>org.apache.parquet:*</include>
               <include>org.apache.orc:*</include>
               <include>io.airlift:*</include>
-	      <include>org.reflections:reflections</include>
+              <include>org.reflections:reflections</include>
             </includes>
           </artifactSet>
           <relocations>
@@ -614,7 +621,7 @@
         <version>3.2.0</version>
         <configuration>
           <descriptors>
-            <descriptor>src/test/assembly/test-jar-with-dependencies.xml</descriptor>
+            <descriptor>../../src/test/assembly/test-jar-with-dependencies.xml</descriptor>
           </descriptors>
         </configuration>
         <executions>
@@ -728,89 +735,4 @@
     </plugins>
   </build>
 
-  <profiles>
-    <profile>
-      <id>vmemcache</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <configuration>
-              <skip>false</skip>
-            </configuration>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-antrun-plugin</artifactId>
-            <version>${maven-antrun-plugin.version}</version>
-            <executions>
-              <execution>
-                <id>build-vmemcahe-native</id>
-                <phase>generate-resources</phase>
-                <goals>
-                  <goal>run</goal>
-                </goals>
-                <configuration>
-                  <target>
-                    <property name="native.src.dir" value="${basedir}/src/main/native/vmemcache/"/>
-                    <property name="build.native.target" value="${basedir}/src/main/resources/lib/linux64"/>
-                    <mkdir dir="${build.native.target}"/>
-                    <exec dir="${native.src.dir}" executable="make" failonerror="true">
-                    </exec>
-                  </target>
-                </configuration>
-              </execution>
-              <execution>
-                <id>clean-native</id>
-                <phase>clean</phase>
-                <goals>
-                  <goal>run</goal>
-                </goals>
-                <configuration>
-                  <target>
-                    <exec dir="${basedir}/src/main/native/vmemcache" executable="make" failonerror="true">
-                      <arg value="clean" />
-                    </exec>
-                  </target>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>persistent-memory</id>
-      <build>
-        <resources>
-          <resource>
-            <directory>src/main/resources</directory>
-          </resource>
-          <resource>
-            <directory>${basedir}/conf</directory>
-          </resource>
-        </resources>
-        <plugins>
-          <plugin>
-            <artifactId>exec-maven-plugin</artifactId>
-            <groupId>org.codehaus.mojo</groupId>
-            <version>${exec.maven.version}</version>
-            <executions>
-              <execution>
-                <id>Compile native code and produce share library</id>
-                <phase>generate-resources</phase>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <configuration>
-                  <executable>${basedir}/src/main/native/compile.sh</executable>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 </project>

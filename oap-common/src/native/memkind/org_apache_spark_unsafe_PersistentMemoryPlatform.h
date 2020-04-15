@@ -56,6 +56,14 @@ JNIEXPORT jlong JNICALL Java_org_apache_spark_unsafe_PersistentMemoryPlatform_ge
 JNIEXPORT void JNICALL Java_org_apache_spark_unsafe_PersistentMemoryPlatform_freeMemory
   (JNIEnv *, jclass, jlong);
 
+/*
+ * Class:     org_apache_spark_pmem_PersistentMemoryPlatform
+ * Method:    copyMemory
+ * Signature: (JJJ)V
+ */
+JNIEXPORT void JNICALL Java_org_apache_spark_pmem_PersistentMemoryPlatform_copyMemory
+  (JNIEnv *, jclass, jlong, jlong, jlong);
+
 #ifdef __cplusplus
 }
 #endif

@@ -48,8 +48,9 @@ case ${ARCH} in
      ;;
 esac
 
-CURRENT_DIR="$(dirname "$0")"
-RESOURCES_DIR=${CURRENT_DIR}/../resources/${OS}/${ARCH}
+CURRENT_DIR=$(cd "$(dirname "$BASH_SOURCE")"; pwd)
+RESOURCES_DIR=${CURRENT_DIR}/../../resources/${OS}/${ARCH}
+echo $RESOURCES_DIR
 
 if [ ! -d ${RESOURCES_DIR} ]; then
     mkdir -p ${RESOURCES_DIR}
@@ -64,5 +65,8 @@ cd build
 cmake -DCMAKE_INSTALL_PREFIX=${RESOURCES_DIR} ../
 make
 make install
+
+cd $CURRENT_DIR
+rm -r build
 
 set +eu

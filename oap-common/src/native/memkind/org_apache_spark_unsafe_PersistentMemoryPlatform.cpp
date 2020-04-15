@@ -16,7 +16,7 @@
  */
 
 #include <memkind.h>
-#include <string>
+#include <cstring>
 #include <cstdio>
 #include <cstdint>
 #include <cstdlib>
@@ -107,4 +107,12 @@ JNIEXPORT void JNICALL Java_org_apache_spark_unsafe_PersistentMemoryPlatform_fre
   (JNIEnv *env, jclass clazz, jlong address) {
   check(env);
   memkind_free(pmemkind, addr_from_java(address));
+}
+
+JNIEXPORT void JNICALL Java_org_apache_spark_pmem_PersistentMemoryPlatform_copyMemory
+  (JNIEnv *env, jclass clazz, jlong destination, jlong source, jlong size) {
+  size_t sz = (size_t)size;
+  void *dest = addr_from_java(destination);
+  void *src = addr_from_java(source);
+  std::memcpy(dest, src, sz);
 }

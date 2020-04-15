@@ -54,15 +54,18 @@ You  need to install the required packages on the build system listed below.
 ##### Building package
 You need to add -Ppersistent-memory to the build command line for building with DCPMM support. For Non-evictable cache stratege, you need to build with -Ppersistent-memory also.
 ```
-mvn clean -q -Ppersistent-memory -DskipTests package
+cd oap-common && mvn install -Ppersistent-memory
+cd oap-cache/oap && mvn clean -q -DskipTests package
 ```
 for vmemcache cache strategy, please build with command:
 ```
-mvn clean -q -Pvmemcache -DskipTests package
+cd oap-common && mvn install -Pvmemcache
+cd oap-cache/oap && mvn clean -q -Pvmemcache -DskipTests package
 ```
 You can build with command to use all of them:
 ```
-mvn clean -q -Ppersistent-memory -Pvmemcache -DskipTests package
+cd oap-common && mvn install -Ppersistent-memory,vmemcache
+cd oap-cache/oap && mvn clean -q -DskipTests package
 ```
 
 ## Integration with Spark
