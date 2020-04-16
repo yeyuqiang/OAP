@@ -369,30 +369,36 @@ private[filecache] class PersistentMemoryManager(sparkEnv: SparkEnv)
 private[filecache] class DaxKmemMemoryManager(sparkEnv: SparkEnv)
   extends PersistentMemoryManager(sparkEnv) with Logging {
 
-  def regularNodeNum: Int = 2;
-
   private val _memorySize = init()
 
   private def init(): Long = {
-        val conf = sparkEnv.conf
-        val numaId = conf.getInt("spark.executor.numa.id", -1)
-        val daxNodeId = numaId + regularNodeNum
+    val conf = sparkEnv.conf
 
-          val (kmemCacheMemory, kmemCacheMemoryReserverd) = {
-            (Utils.byteStringAsBytes(
-                conf.get(OapConf.OAP_FIBERCACHE_PERSISTENT_MEMORY_INITIAL_SIZE).trim),
-                Utils.byteStringAsBytes(
-                    conf.get(OapConf.OAP_FIBERCACHE_PERSISTENT_MEMORY_RESERVED_SIZE).trim))
-          }
-        require(kmemCacheMemoryReserverd >= 0 && kmemCacheMemoryReserverd < kmemCacheMemory,
-            s"Reserved size(${kmemCacheMemoryReserverd}) should greater than zero and less than " +
-                s"initial size(${kmemCacheMemory})"
-            )
-        PersistentMemoryPlatform.setNUMANode(String.valueOf(daxNodeId), String.valueOf(numaId))
-        PersistentMemoryPlatform.initialize()
-        logInfo(s"Running DAX KMEM mode, will use ${kmemCacheMemory} as cache memory, " +
-            s"reserve $kmemCacheMemoryReserverd")
-        kmemCacheMemory - kmemCacheMemoryReserverd
+    val numaId = conf.getInt("spark.executor.numa.id", -1)
+    if (numaId == -1) {
+      throw new OapException("DAX KMEM mode is strongly related to numa node. " +
+        "Please enable numa binding")
+    }
+
+    val map = PersistentMemoryConfigUtils.parseConfig(conf)
+    val regularNodeNum = map.size
+    val daxNodeId = numaId + regularNodeNum
+
+    val (kmemCacheMemory, kmemCacheMemoryReserverd) = {
+      (Utils.byteStringAsBytes(
+        conf.get(OapConf.OAP_FIBERCACHE_PERSISTENT_MEMORY_INITIAL_SIZE).trim),
+        Utils.byteStringAsBytes(
+          conf.get(OapConf.OAP_FIBERCACHE_PERSISTENT_MEMORY_RESERVED_SIZE).trim))
+    }
+    require(kmemCacheMemoryReserverd >= 0 && kmemCacheMemoryReserverd < kmemCacheMemory,
+      s"Reserved size(${kmemCacheMemoryReserverd}) should greater than zero and less than " +
+        s"initial size(${kmemCacheMemory})"
+    )
+    PersistentMemoryPlatform.setNUMANode(String.valueOf(daxNodeId), String.valueOf(numaId))
+    PersistentMemoryPlatform.initialize()
+    logInfo(s"Running DAX KMEM mode, will use ${kmemCacheMemory} as cache memory, " +
+      s"reserve $kmemCacheMemoryReserverd")
+    kmemCacheMemory - kmemCacheMemoryReserverd
   }
 
   override def memorySize: Long = _memorySize
