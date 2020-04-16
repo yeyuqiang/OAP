@@ -34,11 +34,13 @@ import sun.misc.Cleaner;
  * e.g. Intel Optane DC persistent memory.
  */
 public class PersistentMemoryPlatform {
+
   private static volatile boolean initialized = false;
   private static final String LIBNAME = "pmplatform";
   static {
     NativeLibraryLoader.load(LIBNAME);
   }
+
   /**
    * Initialize the persistent memory.
    * @param path The initial path which should be a directory.
@@ -50,20 +52,22 @@ public class PersistentMemoryPlatform {
         Preconditions.checkNotNull(path, "Persistent memory initial path can't be null");
         File dir = new File(path);
         Preconditions.checkArgument(dir.exists() && dir.isDirectory(), "Persistent memory " +
-                "initial path should be a directory");
+          "initial path should be a directory");
         Preconditions.checkArgument(size > 0,
-                "Persistent memory initial size must be a positive number");
+          "Persistent memory initial size must be a positive number");
         try {
           initializeNative(path, size, pattern);
         } catch (Exception e) {
           throw new ExceptionInInitializerError("Persistent memory initialize (path: " + path +
-                  ", size: " + size + ") failed. Please check the path permission and initial size.");
+            ", size: " + size + ") failed. Please check the path permission and initial size.");
         }
         initialized = true;
       }
     }
   }
+
   private static native void initializeNative(String path, long size, int pattern);
+
   /**
    * Allocate volatile memory from persistent memory.
    * @param size the requested size
@@ -71,6 +75,7 @@ public class PersistentMemoryPlatform {
    * Platform which same as OFF_HEAP memory.
    */
   public static native long allocateVolatileMemory(long size);
+
   /**
    * Allocate direct buffer from persistent memory.
    * @param size the requested size
@@ -98,6 +103,7 @@ public class PersistentMemoryPlatform {
       throw new RuntimeException(e);
     }
   }
+
   /**
    * Get the actual occupied size of the given address. The occupied size should be different
    * with the requested size because of the memory management of Intel Optane DC persistent
@@ -106,6 +112,7 @@ public class PersistentMemoryPlatform {
    * @return actual occupied size.
    */
   public static native long getOccupiedSize(long address);
+
   /**
    * Free the memory by address.
    */
