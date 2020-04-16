@@ -50,6 +50,11 @@ inline void check(JNIEnv *env) {
   }
 }
 
+JNIEXPORT void JNICALL Java_com_intel_oap_common_unsafe_PersistentMemoryPlatform_initializeKmem
+  (JNIEnv *, jclass) {
+  pmemkind = MEMKIND_DAX_KMEM;
+}
+
 JNIEXPORT void JNICALL Java_com_intel_oap_common_unsafe_PersistentMemoryPlatform_initializeNative
   (JNIEnv *env, jclass clazz, jstring path, jlong size, jint pattern) {
   // str should not be null, we should checked in java code
@@ -76,6 +81,17 @@ JNIEXPORT void JNICALL Java_com_intel_oap_common_unsafe_PersistentMemoryPlatform
   }
 
   env->ReleaseStringUTFChars(path, str);
+}
+
+JNIEXPORT void JNICALL Java_com_intel_oap_common_unsafe_PersistentMemoryPlatform_setNUMANode
+  (JNIEnv *env, jclass, jstring dax_node, jstring regular_node) {
+  const char* dax_node_str = env->GetStringUTFChars(dax_node, NULL);
+  const char* regular_node_str = env->GetStringUTFChars(regular_node, NULL);
+
+  setenv("MEMKIND_REGULAR_NODES", regular_node_str, 1);
+  setenv("MEMKIND_DAX_KMEM_NODES", dax_node_str, 1);
+  env->ReleaseStringUTFChars(regular_node, regular_node_str);
+  env->ReleaseStringUTFChars(dax_node, dax_node_str);
 }
 
 JNIEXPORT jlong JNICALL Java_com_intel_oap_common_unsafe_PersistentMemoryPlatform_allocateVolatileMemory

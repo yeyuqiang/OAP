@@ -24,6 +24,15 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/*
+ * Class:     com_intel_oap_unsafe_PersistentMemoryPlatform
+ * Method:    initializeNative
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_com_intel_oap_common_unsafe_PersistentMemoryPlatform_initializeKmem
+  (JNIEnv *, jclass);
+
 /*
  * Class:     com_intel_oap_common_unsafe_PersistentMemoryPlatform
  * Method:    initializeNative
@@ -31,6 +40,14 @@ extern "C" {
  */
 JNIEXPORT void JNICALL Java_com_intel_oap_common_unsafe_PersistentMemoryPlatform_initializeNative
   (JNIEnv *, jclass, jstring, jlong, jint);
+
+/*
+ * Class:     com_intel_oap_common_unsafe_PersistentMemoryPlatform
+ * Method:    setNUMANode
+ * Signature: (Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_com_intel_oap_common_unsafe_PersistentMemoryPlatform_setNUMANode
+  (JNIEnv *, jclass, jstring, jstring);
 
 /*
  * Class:     com_intel_oap_common_unsafe_PersistentMemoryPlatform

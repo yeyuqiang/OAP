@@ -65,7 +65,26 @@ public class PersistentMemoryPlatform {
     }
   }
 
+  /**
+   * Initialize the persistent memory with dax kmem node.
+   */
+  public static void initialize() {
+    synchronized (PersistentMemoryPlatform.class) {
+      if (!initialized) {
+        initializeKmem();
+        initialized = true;
+      }
+    }
+  }
+
+  private static native void initializeKmem();
+
   private static native void initializeNative(String path, long size, int pattern);
+
+  /**
+   * Set MEMKIND_DAX_KMEM_NODES for each executor.
+   */
+  public static native void setNUMANode(String daxNodeId, String regularNodeId);
 
   /**
    * Allocate volatile memory from persistent memory.
