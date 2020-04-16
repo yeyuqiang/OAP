@@ -1,8 +1,9 @@
-package org.apache.spark.unsafe;
+package com.intel.ssg.bdt.unsafe;
+
+import com.intel.ssg.bdt.util.NativeLibraryLoader;
 
 import java.nio.ByteBuffer;
 
-import org.apache.spark.util.NativeLibraryLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

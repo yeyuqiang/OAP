@@ -15,16 +15,15 @@
  * limitations under the License.
  */
 
-package org.apache.spark.unsafe;
+package com.intel.ssg.bdt.unsafe;
 
 import com.google.common.base.Preconditions;
+import com.intel.ssg.bdt.util.NativeLibraryLoader;
 
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
-
-import org.apache.spark.util.NativeLibraryLoader;
 
 import sun.misc.Cleaner;
 
@@ -82,7 +81,7 @@ public class PersistentMemoryPlatform {
    * @return the byte buffer which same as Platform.allocateDirectBuffer, it can be operated by
    * Platform which same as OFF_HEAP memory.
    */
-  public static ByteBuffer allocateDirectBuffer(int size) {
+  public static ByteBuffer allocateVolatileDirectBuffer(int size) {
     try {
       Class<?> cls = Class.forName("java.nio.DirectByteBuffer");
       Constructor<?> constructor = cls.getDeclaredConstructor(Long.TYPE, Integer.TYPE);
