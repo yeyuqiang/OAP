@@ -129,6 +129,7 @@ private[sql] object MemoryManager extends Logging {
       case "pm" => new PersistentMemoryManager(sparkEnv)
       case "hybrid" => new HybridMemoryManager(sparkEnv)
       case "tmp" => new TmpDramMemoryManager(sparkEnv)
+      case "kmem" => new DaxKmemMemoryManager(sparkEnv)
       case _ => throw new UnsupportedOperationException(
         s"The memory manager: ${memoryManagerOpt} is not supported now")
     }
@@ -363,6 +364,39 @@ private[filecache] class PersistentMemoryManager(sparkEnv: SparkEnv)
   }
 
   override def isDcpmmUsed(): Boolean = {true}
+}
+
+private[filecache] class DaxKmemMemoryManager(sparkEnv: SparkEnv)
+  extends PersistentMemoryManager(sparkEnv) with Logging {
+
+  def regularNodeNum: Int = 2;
+
+  private val _memorySize = init()
+
+  private def init(): Long = {
+        val conf = sparkEnv.conf
+        val numaId = conf.getInt("spark.executor.numa.id", -1)
+        val daxNodeId = numaId + regularNodeNum
+
+          val (kmemCacheMemory, kmemCacheMemoryReserverd) = {
+            (Utils.byteStringAsBytes(
+                conf.get(OapConf.OAP_FIBERCACHE_PERSISTENT_MEMORY_INITIAL_SIZE).trim),
+                Utils.byteStringAsBytes(
+                    conf.get(OapConf.OAP_FIBERCACHE_PERSISTENT_MEMORY_RESERVED_SIZE).trim))
+          }
+        require(kmemCacheMemoryReserverd >= 0 && kmemCacheMemoryReserverd < kmemCacheMemory,
+            s"Reserved size(${kmemCacheMemoryReserverd}) should greater than zero and less than " +
+                s"initial size(${kmemCacheMemory})"
+            )
+        PersistentMemoryPlatform.setNUMANode(String.valueOf(daxNodeId), String.valueOf(numaId))
+        PersistentMemoryPlatform.initialize()
+        logInfo(s"Running DAX KMEM mode, will use ${kmemCacheMemory} as cache memory, " +
+            s"reserve $kmemCacheMemoryReserverd")
+        kmemCacheMemory - kmemCacheMemoryReserverd
+  }
+
+  override def memorySize: Long = _memorySize
+
 }
 
 private[filecache] class HybridMemoryManager(sparkEnv: SparkEnv)

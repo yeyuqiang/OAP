@@ -38,6 +38,15 @@ class MemoryManagerSuite extends SharedOapContext with Logging{
     assert(memoryManager.isInstanceOf[OffHeapMemoryManager])
   }
 
+  test("guava with dax kmem memory manager") {
+    val sparkEnv = SparkEnv.get
+    sparkEnv.conf.set("spark.oap.cache.strategy", "guava")
+    sparkEnv.conf.set("spark.sql.oap.fiberCache.memory.manager", "kmem")
+    sparkEnv.conf.set("spark.sql.oap.fiberCache.persistent.memory.initial.size", "100m")
+    val memoryManager = MemoryManager(sparkEnv)
+    assert(memoryManager.isInstanceOf[DaxKmemMemoryManager])
+  }
+
   test("vmem with tmp memory manager") {
     val sparkEnv = SparkEnv.get
     sparkEnv.conf.set("spark.oap.cache.strategy", "vmem")
