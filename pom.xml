@@ -17,7 +17,7 @@
 
     <groupId>com.intel.ssg.bdt</groupId>
     <artifactId>oap</artifactId>
-    <version>0.7.0</version>
+    <version>0.8.0</version>
     <packaging>pom</packaging>
 
     <properties>
