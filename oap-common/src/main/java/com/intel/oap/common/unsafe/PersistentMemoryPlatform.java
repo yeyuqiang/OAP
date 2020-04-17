@@ -82,7 +82,11 @@ public class PersistentMemoryPlatform {
   private static native void initializeNative(String path, long size, int pattern);
 
   /**
-   * Set MEMKIND_DAX_KMEM_NODES for each executor.
+   * For DAX KMEM usage only
+   * @param daxNodeId the numa node created from persistent memory.
+   *                  memkind will set it as MEMKIND_DAX_KMEM_NODES env.
+   *                  by using MEMKIND_DAX_KMEM_NODES, memkind will recognize this node
+   * @param regularNodeId the numa node from dram
    */
   public static native void setNUMANode(String daxNodeId, String regularNodeId);
 
