@@ -26,7 +26,7 @@ extern "C" {
 #endif
 
 /*
- * Class:     com_intel_oap_unsafe_PersistentMemoryPlatform
+ * Class:     com_intel_oap_common_unsafe_PersistentMemoryPlatform
  * Method:    initializeNative
  * Signature: (J)V
  */
