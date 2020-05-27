@@ -17,7 +17,7 @@ public class PMemMemoryMapper {
      * @param fileLength
      * @return pmem address
      */
-    public static native long pmemMapFile(String fileName, long fileLength);
+    public static native long pmemMapFile(String fileName, long fileLength, boolean fileCreated);
 
     public static native void pmemMemcpy(long pmemAddress, byte[] src, long length);
 

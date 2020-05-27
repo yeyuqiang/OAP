@@ -5,9 +5,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public abstract class ChunkWriter {
-    private PMemManager pMemManager;
+    protected PMemManager pMemManager;
     private byte[] logicalID;
-    private int chunkID = 0;
+    protected int chunkID = 0;
     private ByteBuffer remainingBuffer;
     private boolean fallbackTriggered = false;
     private FileOutputStream outputStream = null;

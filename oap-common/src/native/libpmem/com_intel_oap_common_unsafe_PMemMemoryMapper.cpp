@@ -39,16 +39,20 @@ inline jlong addr_to_java(void* p) {
 }
 
 JNIEXPORT jlong JNICALL Java_com_intel_oap_common_unsafe_PMemMemoryMapper_pmemMapFile
-  (JNIEnv *env, jclass clazz, jstring fileName, jlong fileLength) {
+  (JNIEnv *env, jclass clazz, jstring fileName, jlong fileLength, jboolean fileCreated) {
     const char* path = NULL;
     void* pmemaddr = NULL;
     size_t mapped_len = 0;
     int is_pmem = 0;
 
     path = env->GetStringUTFChars(fileName, NULL);
-    pmemaddr = pmem_map_file(path, fileLength,
-                             PMEM_FILE_CREATE|PMEM_FILE_EXCL,
-                             0666, &mapped_len, &is_pmem);
+    if (!fileCreated) {
+      pmemaddr = pmem_map_file(path, fileLength,
+                               PMEM_FILE_CREATE|PMEM_FILE_EXCL,
+                               0666, &mapped_len, &is_pmem);
+    } else {
+      pmemaddr = pmem_map_file(path, 0, 0, 0666, &mapped_len, &is_pmem);
+    }
 
     env->ReleaseStringUTFChars(fileName, path);
     return addr_to_java(pmemaddr);

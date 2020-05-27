@@ -30,7 +30,7 @@ extern "C" {
  * Signature: (Ljava/lang/String;J)J
  */
 JNIEXPORT jlong JNICALL Java_com_intel_oap_common_unsafe_PMemMemoryMapper_pmemMapFile
-  (JNIEnv *, jclass, jstring, jlong);
+  (JNIEnv *, jclass, jstring, jlong, jboolean);
 
 /*
  * Class:     com_intel_oap_common_unsafe_PMemMemoryMapper
