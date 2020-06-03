@@ -195,7 +195,6 @@ object SparkEnv extends Logging {
   private[spark] def createExecutorEnv(
       conf: SparkConf,
       executorId: String,
-      numaNodeId: Option[String],
       hostname: String,
       numCores: Int,
       ioEncryptionKey: Option[Array[Byte]],
@@ -203,7 +202,6 @@ object SparkEnv extends Logging {
     val env = create(
       conf,
       executorId,
-      numaNodeId,
       hostname,
       hostname,
       None,
@@ -222,7 +220,6 @@ object SparkEnv extends Logging {
   private def create(
       conf: SparkConf,
       executorId: String,
-      numaNodeId: Option[String],
       bindAddress: String,
       advertiseAddress: String,
       port: Option[Int],
@@ -234,10 +231,14 @@ object SparkEnv extends Logging {
 
     val isDriver = executorId == SparkContext.DRIVER_IDENTIFIER
 
+    var numaNodeId = conf.getInt("spark.executor.numa.id", -1)
     val pmemInitialPaths = conf.get("spark.memory.pmem.initial.path", "").split(",")
     val pmemInitialSize = conf.getSizeAsBytes("spark.memory.pmem.initial.size", 0L)
     if (!isDriver && pmemInitialPaths.size > 1) {
-      val path = pmemInitialPaths(numaNodeId.getOrElse(executorId).toInt % 2)
+      if (numaNodeId == -1) {
+        numaNodeId = executorId.toInt
+      }
+      val path = pmemInitialPaths(numaNodeId % 2)
       val initPath = path + File.separator + s"executor_${executorId}" + File.pathSeparator
       val file = new File(initPath)
       if (file.exists() && file.isFile) {
