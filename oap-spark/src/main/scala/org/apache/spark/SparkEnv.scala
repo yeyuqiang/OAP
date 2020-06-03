@@ -176,7 +176,6 @@ object SparkEnv extends Logging {
     create(
       conf,
       SparkContext.DRIVER_IDENTIFIER,
-      None,
       bindAddress,
       advertiseAddress,
       Option(port),
