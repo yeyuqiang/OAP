@@ -59,6 +59,7 @@ private[spark] class UnifiedMemoryManager private[memory] (
     assert(onHeapExecutionMemoryPool.poolSize + onHeapStorageMemoryPool.poolSize == maxHeapMemory)
     assert(
       offHeapExecutionMemoryPool.poolSize + offHeapStorageMemoryPool.poolSize == maxOffHeapMemory)
+    assert(pmemStorageMemoryPool.poolSize == pmemStorageMemory)
   }
 
   assertInvariants()
@@ -69,6 +70,10 @@ private[spark] class UnifiedMemoryManager private[memory] (
 
   override def maxOffHeapStorageMemory: Long = synchronized {
     maxOffHeapMemory - offHeapExecutionMemoryPool.memoryUsed
+  }
+
+  override def maxPMemStorageMemory: Long = synchronized {
+    pmemStorageMemory
   }
 
   /**
@@ -86,6 +91,7 @@ private[spark] class UnifiedMemoryManager private[memory] (
       memoryMode: MemoryMode): Long = synchronized {
     assertInvariants()
     assert(numBytes >= 0)
+    require(memoryMode != MemoryMode.PMEM, "PMem can not used as execution memory")
     val (executionPool, storagePool, storageRegionSize, maxMemory) = memoryMode match {
       case MemoryMode.ON_HEAP => (
         onHeapExecutionMemoryPool,
@@ -161,6 +167,11 @@ private[spark] class UnifiedMemoryManager private[memory] (
         offHeapExecutionMemoryPool,
         offHeapStorageMemoryPool,
         maxOffHeapStorageMemory)
+      case MemoryMode.PMEM => (
+        null,
+        pmemStorageMemoryPool,
+        maxPMemStorageMemory
+      )
     }
     if (numBytes > maxMemory) {
       // Fail fast if the block simply won't fit
@@ -169,6 +180,8 @@ private[spark] class UnifiedMemoryManager private[memory] (
       return false
     }
     if (numBytes > storagePool.memoryFree) {
+      // When in PMem mode, borrowing from execution memory or eviction will not happen
+      if (memoryMode == MemoryMode.PMEM) return false
       // There is not enough free memory in the storage pool, so try to borrow free memory from
       // the execution pool.
       val memoryBorrowedFromExecution = Math.min(executionPool.memoryFree,
