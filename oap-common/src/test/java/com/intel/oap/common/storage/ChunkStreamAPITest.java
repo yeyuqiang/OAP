@@ -46,6 +46,7 @@ public class ChunkStreamAPITest {
         Properties p = new Properties();
         p.setProperty("totalSize", totalSize);
         p.setProperty("chunkSize", chunkSize);
+        p.setProperty("metaStore", "memkind");
         PMemManager pMemManager = new PMemManager(p);
         dataStore = new DataStore(pMemManager);
         String fileName = "target/test.file";
@@ -71,6 +72,7 @@ public class ChunkStreamAPITest {
         Properties p = new Properties();
         p.put("totalSize", "1024");
         p.put("chunkSize", "10");
+        p.setProperty("metaStore", "memkind");
         PMemManager pMemManager = new PMemManager(p);
         dataStore = new DataStore(pMemManager);
         String fileName = "target/test.file";
