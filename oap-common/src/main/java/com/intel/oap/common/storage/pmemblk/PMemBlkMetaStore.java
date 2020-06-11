@@ -19,7 +19,7 @@ public class PMemBlkMetaStore implements PMemMetaStore {
         String pmemkvPath = properties.getProperty("pmemkv_path");
         String pmemkvSize = properties.getProperty("pmemkv_size");
         pmemkvDB = PMemKVDatabase.open(pmemkvEngine, pmemkvPath, Long.parseLong(pmemkvSize));
-        String currentPMemBlkIndex = pmemkvDB.get("currentPMemBlkIndex");
+        String currentPMemBlkIndex = pmemkvDB.getCopy("currentPMemBlkIndex");
         if (currentPMemBlkIndex == null)
             currentPMemBlkIndex = "0";
         index.set(Integer.parseInt(currentPMemBlkIndex));
@@ -27,7 +27,7 @@ public class PMemBlkMetaStore implements PMemMetaStore {
 
     @Override
     public PMemPhysicalAddress getPhysicalAddressByID(byte[] id, int chunkID) {
-        String indexStr = pmemkvDB.get(id.toString() + "_" + chunkID);
+        String indexStr = pmemkvDB.getCopy(id.toString() + "_" + chunkID);
         return new PMemBlkPhysicalAddress(Integer.parseInt(indexStr));
     }
 
@@ -58,8 +58,8 @@ public class PMemBlkMetaStore implements PMemMetaStore {
 
     @Override
     public MetaData getMetaFooter(byte[] id) {
-        String hasDiskDataStr = pmemkvDB.get(id.toString() + "_hasDiskData");
-        String totalChunkStr = pmemkvDB.get(id.toString() + "_totalChunk");
+        String hasDiskDataStr = pmemkvDB.getCopy(id.toString() + "_hasDiskData");
+        String totalChunkStr = pmemkvDB.getCopy(id.toString() + "_totalChunk");
         return new MetaData(Boolean.parseBoolean(hasDiskDataStr), Integer.parseInt(totalChunkStr));
     }
 

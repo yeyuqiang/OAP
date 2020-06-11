@@ -49,16 +49,16 @@ public class PMemKVDatabaseTest {
         db.put("key2", "value2");
         db.put("key3", "value3");
         assertEquals(3, db.countAll());
-        assertEquals("value1", db.get("key1"));
-        assertEquals("value2", db.get("key2"));
-        assertEquals("value3", db.get("key3"));
+        assertEquals("value1", db.getCopy("key1"));
+        assertEquals("value2", db.getCopy("key2"));
+        assertEquals("value3", db.getCopy("key3"));
         db.stop();
 
         Database dbReopened = PMemKVDatabase.open(ENGINE, PATH, PMEMKV_SIZE);
         assertEquals(3, dbReopened.countAll());
-        assertEquals("value1", dbReopened.get("key1"));
-        assertEquals("value2", dbReopened.get("key2"));
-        assertEquals("value3", dbReopened.get("key3"));
+        assertEquals("value1", dbReopened.getCopy("key1"));
+        assertEquals("value2", dbReopened.getCopy("key2"));
+        assertEquals("value3", dbReopened.getCopy("key3"));
         dbReopened.stop();
     }
 }
