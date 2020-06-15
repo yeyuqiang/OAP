@@ -27,8 +27,11 @@ public class PMemBlkMetaStore implements PMemMetaStore {
 
     @Override
     public PMemPhysicalAddress getPhysicalAddressByID(byte[] id, int chunkID) {
-        String indexStr = pmemkvDB.getCopy(id.toString() + "_" + chunkID);
-        return new PMemBlkPhysicalAddress(Integer.parseInt(indexStr));
+        String indexStr = pmemkvDB.getCopy(id.toString() + "_" + chunkID + "_index");
+        String lengthStr = pmemkvDB.getCopy(id.toString() + "_" + chunkID + "_length");
+        if (indexStr == null || lengthStr == null)
+            return null;
+        return new PMemBlkPhysicalAddress(Integer.parseInt(indexStr), Integer.parseInt(lengthStr));
     }
 
     @Override
@@ -48,7 +51,9 @@ public class PMemBlkMetaStore implements PMemMetaStore {
     public void putPhysicalAddress(byte[] id, int chunkID, PMemPhysicalAddress pMemPhysicalAddress) {
         PMemBlkPhysicalAddress pMemBlkPhysicalAddress = (PMemBlkPhysicalAddress) pMemPhysicalAddress;
         int index = pMemBlkPhysicalAddress.getIndex();
-        pmemkvDB.put(id.toString() + "_" + chunkID, String.valueOf(index));
+        int length = pMemBlkPhysicalAddress.getLength();
+        pmemkvDB.put(id.toString() + "_" + chunkID + "_index", String.valueOf(index));
+        pmemkvDB.put(id.toString() + "_" + chunkID + "_length", String.valueOf(length));
     }
 
     @Override
@@ -60,6 +65,8 @@ public class PMemBlkMetaStore implements PMemMetaStore {
     public MetaData getMetaFooter(byte[] id) {
         String hasDiskDataStr = pmemkvDB.getCopy(id.toString() + "_hasDiskData");
         String totalChunkStr = pmemkvDB.getCopy(id.toString() + "_totalChunk");
+        if (hasDiskDataStr == null) hasDiskDataStr = "false";
+        if (totalChunkStr == null) totalChunkStr = "0";
         return new MetaData(Boolean.parseBoolean(hasDiskDataStr), Integer.parseInt(totalChunkStr));
     }
 

@@ -18,9 +18,10 @@ public class PMemBlkChunkWriter extends ChunkWriter {
 
     @Override
     protected PMemPhysicalAddress writeInternal(ByteBuffer byteBuffer) {
+        int length = byteBuffer.position();
         int index = pMemMetaStore.nextPMemBlockIndex();
         PMemBlockPlatform.write(byteBuffer.array(), index);
-        return new PMemBlkPhysicalAddress(index);
+        return new PMemBlkPhysicalAddress(index, length);
     }
 
     @Override

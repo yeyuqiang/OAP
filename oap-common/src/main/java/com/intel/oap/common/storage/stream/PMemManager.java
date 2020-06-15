@@ -46,6 +46,7 @@ public class PMemManager {
                 break;
             case "pmemblk":
                 pMemMetaStore = new PMemBlkMetaStore(properties);
+                break;
         }
     }
 
