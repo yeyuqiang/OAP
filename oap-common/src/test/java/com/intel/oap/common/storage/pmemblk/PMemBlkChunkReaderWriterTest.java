@@ -22,6 +22,7 @@ public class PMemBlkChunkReaderWriterTest {
     private static String PATH = "/dev/shm/PMemBlkChunkReaderWriterTest_blk_file";
     private static byte[] LOGICID = "PMemBlkChunkReaderWriterTest-logicID".getBytes();
     private static String METASTORE = "pmemblk";
+    private static String STORETYPE = "libpmem";
 
     private static String PMEMKV_PATH = "/dev/shm/pmemkv_db";
     private static String STORAGE_ENGINE = "cmap";
@@ -41,7 +42,8 @@ public class PMemBlkChunkReaderWriterTest {
         Properties properties = new Properties();
         properties.setProperty("totalSize", String.valueOf(POOL_SIZE));
         properties.setProperty("chunkSize", String.valueOf(ELEMENT_SIZE));
-        properties.setProperty("metaStore", String.valueOf(METASTORE));
+        properties.setProperty("metaStore", METASTORE);
+        properties.setProperty("storetype", STORETYPE);
         properties.setProperty("pmemkv_engine", STORAGE_ENGINE);
         properties.setProperty("pmemkv_path", PMEMKV_PATH);
         properties.setProperty("pmemkv_size", String.valueOf(PMEMKV_SIZE));

@@ -28,6 +28,8 @@ public class PMemBlkMetaStore implements PMemMetaStore {
     @Override
     public PMemPhysicalAddress getPhysicalAddressByID(byte[] id, int chunkID) {
         String indexStr = pmemkvDB.getCopy(id.toString() + "_" + chunkID);
+        if (indexStr == null)
+            return null;
         return new PMemBlkPhysicalAddress(Integer.parseInt(indexStr));
     }
 
@@ -60,6 +62,8 @@ public class PMemBlkMetaStore implements PMemMetaStore {
     public MetaData getMetaFooter(byte[] id) {
         String hasDiskDataStr = pmemkvDB.getCopy(id.toString() + "_hasDiskData");
         String totalChunkStr = pmemkvDB.getCopy(id.toString() + "_totalChunk");
+        if (hasDiskDataStr == null) hasDiskDataStr = "false";
+        if (totalChunkStr == null) totalChunkStr = "0";
         return new MetaData(Boolean.parseBoolean(hasDiskDataStr), Integer.parseInt(totalChunkStr));
     }
 
