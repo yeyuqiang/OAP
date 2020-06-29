@@ -1,20 +1,22 @@
 package com.intel.oap.common.storage.stream;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.channels.FileChannel;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
 
-public class ChunkOutputStream extends FileOutputStream {
+import java.nio.channels.WritableByteChannel;
 
+public class ChunkOutputStream extends OutputStream implements WritableByteChannel {
+
+    private boolean isOpen = true;
     private ChunkWriter chunkWriter;
 
-    public ChunkOutputStream(String name, DataStore dataStore) throws FileNotFoundException {
-        super(name);
-        this.chunkWriter = dataStore.getChunkWriter(name.getBytes());
+    public ChunkOutputStream(byte[] name, DataStore dataStore) {
+        super();
+        this.chunkWriter = dataStore.getChunkWriter(name);
     }
 
-    public void write(int b) throws IOException {
+    public void write(int b) {
         throw new RuntimeException("Unsupported Operation");
     }
 
@@ -31,10 +33,15 @@ public class ChunkOutputStream extends FileOutputStream {
      * @param      len   the number of bytes to write.
      * @exception  IOException  if an I/O error occurs.
      */
-    public void write(byte b[], int off, int len) throws IOException {
+    public void write(byte b[], int off, int len) {
         throw new RuntimeException("Unsupported Operation");
     }
 
+
+    @Override
+    public boolean isOpen() {
+        return isOpen;
+    }
 
     /**
      * Closes this file output stream and releases any system resources
@@ -51,27 +58,16 @@ public class ChunkOutputStream extends FileOutputStream {
      */
     public void close() throws IOException {
         chunkWriter.close();
+        isOpen = false;
         super.close();
     }
 
-    /**
-     * Returns the unique {@link java.nio.channels.FileChannel FileChannel}
-     * object associated with this file output stream.
-     *
-     * <p> The initial {@link java.nio.channels.FileChannel#position()
-     * position} of the returned channel will be equal to the
-     * number of bytes written to the file so far unless this stream is in
-     * append mode, in which case it will be equal to the size of the file.
-     * Writing bytes to this stream will increment the channel's position
-     * accordingly.  Changing the channel's position, either explicitly or by
-     * writing, will change this stream's file position.
-     *
-     * @return  the file channel associated with this file output stream
-     *
-     * @since 1.4
-     * @spec JSR-51
-     */
-    public FileChannel getChannel() {
-        throw new RuntimeException("Unsupported Operation");
+    @Override
+    public int write(ByteBuffer src) throws IOException {
+        int remaining = src.remaining();
+        byte[] bytes = new byte[remaining];
+        src.get(bytes);
+        write(bytes);
+        return remaining;
     }
 }
