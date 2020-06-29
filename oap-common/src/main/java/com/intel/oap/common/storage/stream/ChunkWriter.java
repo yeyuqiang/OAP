@@ -40,11 +40,9 @@ public abstract class ChunkWriter {
             i++;
             j++;
         }
-        if(j == pMemManager.getChunkSize()){
-            // Flush buffer through chunk writer
-            flushBufferByChunk(remainingBuffer);
-            remainingBuffer.clear();
-        }
+        // Flush buffer through chunk writer
+        flushBufferByChunk(remainingBuffer);
+        remainingBuffer.clear();
     }
 
     private void flushBufferByChunk(ByteBuffer byteBuffer) throws IOException {
