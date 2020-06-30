@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.intel.oap</groupId>
         <artifactId>oap-parent</artifactId>
-        <version>0.8.0</version>
+        <version>0.9.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -15,11 +15,19 @@
     <packaging>jar</packaging>
     <name>OAP Spark</name>
 
+  <properties>
+    <scala.version>2.12.10</scala.version>
+    <scala.binary.version>2.12</scala.binary.version>
+    <maven-patch-plugin.version>1.2</maven-patch-plugin.version>
+    <maven-resource-plugin.version>2.6</maven-resource-plugin.version>
+    <jetty.version>9.3.24.v20180605</jetty.version>
+  </properties>
+
     <dependencies>
         <dependency>
-            <groupId>org.apache.spark</groupId>
+            <groupId>com.intel.spark</groupId>
             <artifactId>spark-core_${scala.binary.version}</artifactId>
-            <version>${oap.spark.version}</version>
+            <version>${spark.internal.version}</version>
         </dependency>
         <dependency>
             <groupId>com.intel.oap</groupId>
@@ -83,6 +91,7 @@
     </dependencies>
 
     <build>
+	<finalName>${project.artifactId}-${project.version}-with-spark-${spark.internal.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>net.alchim31.maven</groupId>
