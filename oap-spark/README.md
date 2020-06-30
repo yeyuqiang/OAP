@@ -6,7 +6,14 @@ Please add feature description here.
 - [User Guide](#userguide)
 
 ## Introduciton
-Please add the detailed introduction and conceptual architecture overview here.
+
+OAP Spark support RDD Cache with Optane PMem. Spark has various storage levels serving for different purposes including memory and disk.
+
+PMem storage level is added to support a new tier for storage level besides memory and disk.
+
+Using PMem library to access Optane PMem can help to avoid the overhead from disk.
+
+Large capacity and high I/O performance of PMem shows better performance than tied DRAM and disk solution under the same cost.
 
 ## User Guide
 ### Prerequisites
@@ -21,6 +28,7 @@ To enable rdd cache on Intel Optane PMem, you need add the following configurati
 ```
 spark.memory.pmem.initial.path [Your Optane PMem paths seperate with comma]
 spark.memory.pmem.initial.size [Your Optane PMem size in GB]
+spark.memory.pmem.usable.ratio [from 0 to 1, 0.85 is recommended]
 spark.yarn.numa.enabled true
 spark.yarn.numa.num [Your numa node number]
 
