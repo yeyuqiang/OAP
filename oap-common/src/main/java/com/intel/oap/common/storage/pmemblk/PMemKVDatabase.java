@@ -39,9 +39,13 @@ class StringConverter implements Converter<String> {
     }
 
     public String fromByteBuffer(ByteBuffer entry) {
-        byte[] bytes;
-        bytes = new byte[entry.capacity()];
-        entry.get(bytes);
-        return new String(bytes);
+        if (entry.hasArray()) {
+            return new String(entry.array());
+        } else {
+            byte[] bytes;
+            bytes = new byte[entry.capacity()];
+            entry.get(bytes);
+            return new String(bytes);
+        }
     }
 }
