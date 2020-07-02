@@ -18,9 +18,46 @@ Large capacity and high I/O performance of PMem shows better performance than ti
 ## User Guide
 ### Prerequisites
 
-Before getting start with storage extension with Optane PMem, your machine should have Intel Optane PMem setup and you should have memkind being installed. For memkind installation, please refer [memkind webpage](https://github.com/memkmemkindind/).
+The following are required to configure OAP to use DCPMM cache.
+- DCPMM hardware is successfully deployed on each node in cluster.
+- Directories exposing DCPMM hardware on each socket. For example, on a two socket system the mounted DCPMM directories should appear as `/mnt/pmem0` and `/mnt/pmem1`. Correctly installed DCPMM must be formatted and mounted on every cluster worker node.
 
-Please refer to documentation at ["Quick Start Guide: Provision Intel® Optane™ DC Persistent Memory"](https://software.intel.com/en-us/articles/quick-start-guide-configure-intel-optane-dc-persistent-memory-on-linux) for detailed to setup Optane PMem with App Direct Mode.
+   ```
+   // use impctl command to show topology and dimm info of DCPM
+   impctl show -topology
+   impctl show -dimm
+   // provision dcpm in app direct mode
+   ipmctl create -goal PersistentMemoryType=AppDirect
+   // reboot system to make configuration take affect
+   reboot
+   // check capacity provisioned for app direct mode(AppDirectCapacity)
+   impctl show -memoryresources
+   // show the DCPM region information
+   impctl show -region
+   // create namespace based on the region, multi namespaces can be created on a single region
+   ndctl create-namespace -m fsdax -r region0
+   ndctl create-namespace -m fsdax -r region1
+   // show the created namespaces
+   fdisk -l
+   // create and mount file system
+   mount -o dax /dev/pmem0 /mnt/pmem0
+   mount -o dax /dev/pmem1 /mnt/pmem1
+   ```
+
+   In this case file systems are generated for 2 numa nodes, which can be checked by "numactl --hardware". For a different number of numa nodes, a corresponding number of namespaces should be created to assure correct file system paths mapping to numa nodes.
+
+- Make sure [Memkind](http://memkind.github.io/memkind/) library installed on every cluster worker node. Compile Memkind based on your system or directly place our pre-built binary of [libmemkind.so.0](https://github.com/Intel-bigdata/OAP/releases/download/v0.8.0-spark-2.4.4/libmemkind.so.0) for x86 64bit CentOS Linux in the `/lib64/`directory of each worker node in cluster.
+   The Memkind library depends on `libnuma` at the runtime, so it must already exist in the worker node system.
+   Build the latest memkind lib from source:
+
+   ```
+   git clone https://github.com/memkind/memkind
+   cd memkind
+   ./autogen.sh
+   ./configure
+   make
+   make install
+   ```
 
 ### Compiling
 
@@ -55,7 +92,9 @@ persist(StorageLevel.PMEM_AND_DISK)
 
 ### Run K-means benchmark
 
-You can use [Hibench](https://github.com/Intel-bigdata/HiBench) to run K-means workload:
+You can use [Hibench](https://github.com/Intel-bigdata/HiBench) to run K-means workload.
+
+To verify whether Optane PMem RDD Cache works, please check the usage of /mnt/pmem0 and /mnt/pmem1.
 
 ### Limitations
 
