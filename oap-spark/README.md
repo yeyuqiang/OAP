@@ -22,6 +22,15 @@ Before getting start with storage extension with Optane PMem, your machine shoul
 
 Please refer to documentation at ["Quick Start Guide: Provision Intel® Optane™ DC Persistent Memory"](https://software.intel.com/en-us/articles/quick-start-guide-configure-intel-optane-dc-persistent-memory-on-linux) for detailed to setup Optane PMem with App Direct Mode.
 
+### Compiling
+
+To build oap spark and oap common, you can run below commands:
+```
+cd ${OAP_CODE_HOME}
+mvn clean package -Ppersistent-memory -DskipTests
+```
+You will find jar files under oap-common/target and oap-spark/target.
+
 ### Configuration
 
 To enable rdd cache on Intel Optane PMem, you need add the following configurations:
