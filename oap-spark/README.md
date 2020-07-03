@@ -92,9 +92,42 @@ persist(StorageLevel.PMEM_AND_DISK)
 
 ### Run K-means benchmark
 
-You can use [Hibench](https://github.com/Intel-bigdata/HiBench) to run K-means workload.
+You can use [Hibench](https://github.com/Intel-bigdata/HiBench) to run K-means workload:
 
-To verify whether Optane PMem RDD Cache works, please check the usage of /mnt/pmem0 and /mnt/pmem1.
+After you Build Hibench, then follow Run SparkBench documentation. Here is some tips besides this documentation you need to notice.
+Follow the documentation to configure these 4 files:
+```
+HiBench/conf/hadoop.conf
+HiBench/conf/hibench.conf
+HiBench/conf/spark.conf
+HiBench/conf/workloads/ml/kmeans.conf
+```
+Note that you need add `hibench.kmeans.storage.level  PMEM_AND_DISK` to `kmeans.conf`, which can enable both DCPMM and Disk to cache data.
+Then you can run the following 2 commands to run K-means workloads:
+```
+bin/workloads/ml/kmeans/prepare/prepare.sh
+bin/workloads/ml/kmeans/spark/run.sh
+```
+Here is the log:
+```
+patching args=
+Parsing conf: /home/wh/HiBench/conf/hadoop.conf
+Parsing conf: /home/wh/HiBench/conf/hibench.conf
+Parsing conf: /home/wh/HiBench/conf/spark.conf
+Parsing conf: /home/wh/HiBench/conf/workloads/ml/kmeans.conf
+probe sleep jar: /opt/Beaver/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-2.7.3-tests.jar
+start ScalaSparkKmeans bench
+hdfs rm -r: /opt/Beaver/hadoop/bin/hadoop --config /opt/Beaver/hadoop/etc/hadoop fs -rm -r -skipTrash hdfs://vsr219:9000/HiBench/Kmeans/Output
+rm: `hdfs://vsr219:9000/HiBench/Kmeans/Output': No such file or directory
+hdfs du -s: /opt/Beaver/hadoop/bin/hadoop --config /opt/Beaver/hadoop/etc/hadoop fs -du -s hdfs://vsr219:9000/HiBench/Kmeans/Input
+Export env: SPARKBENCH_PROPERTIES_FILES=/home/wh/HiBench/report/kmeans/spark/conf/sparkbench/sparkbench.conf
+Export env: HADOOP_CONF_DIR=/opt/Beaver/hadoop/etc/hadoop
+Submit Spark job: /opt/Beaver/spark/bin/spark-submit  --properties-file /home/wh/HiBench/report/kmeans/spark/conf/sparkbench/spark.conf --class com.intel.hibench.sparkbench.ml.DenseKMeans --master yarn-client --num-executors 2 --executor-cores 45 --executor-memory 100g /home/wh/HiBench/sparkbench/assembly/target/sparkbench-assembly-8.0-SNAPSHOT-dist.jar -k 10 --numIterations 5 --storageLevel PMEM_AND_DISK hdfs://vsr219:9000/HiBench/Kmeans/Input/samples
+20/07/03 09:07:49 INFO util.ShutdownHookManager: Deleting directory /tmp/spark-43459116-f4e3-4fe1-bb29-9bca0afa5286
+finish ScalaSparkKmeans bench
+```
+
+Open the Spark History Web UI and go to the Storage tab page to verify the cache metrics.
 
 ### Limitations
 
