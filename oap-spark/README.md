@@ -23,23 +23,25 @@ The following are required to configure OAP to use DCPMM cache.
 - Directories exposing DCPMM hardware on each socket. For example, on a two socket system the mounted DCPMM directories should appear as `/mnt/pmem0` and `/mnt/pmem1`. Correctly installed DCPMM must be formatted and mounted on every cluster worker node.
 
    ```
-   // use impctl command to show topology and dimm info of DCPM
-   impctl show -topology
-   impctl show -dimm
+   // use ipmctl command to show topology and dimm info of DCPM
+   ipmctl show -topology
+   ipmctl show -dimm
    // provision dcpm in app direct mode
    ipmctl create -goal PersistentMemoryType=AppDirect
    // reboot system to make configuration take affect
    reboot
    // check capacity provisioned for app direct mode(AppDirectCapacity)
-   impctl show -memoryresources
+   ipmctl show -memoryresources
    // show the DCPM region information
-   impctl show -region
+   ipmctl show -region
    // create namespace based on the region, multi namespaces can be created on a single region
    ndctl create-namespace -m fsdax -r region0
    ndctl create-namespace -m fsdax -r region1
    // show the created namespaces
    fdisk -l
    // create and mount file system
+   echo y | mkfs.ext4 /dev/pmem0
+   echo y | mkfs.ext4 /dev/pmem1
    mount -o dax /dev/pmem0 /mnt/pmem0
    mount -o dax /dev/pmem1 /mnt/pmem1
    ```
@@ -78,9 +80,9 @@ spark.memory.pmem.usable.ratio [from 0 to 1, 0.85 is recommended]
 spark.yarn.numa.enabled true
 spark.yarn.numa.num [Your numa node number]
 
-spark.files                       file://${{PATH_TO_OAP_SPARK_JAR}/oap-spark-${VERSION}.jar,file://${{PATH_TO_OAP_COMMON_JAR}/oap-common-${VERSION}.jar
-spark.executor.extraClassPath     ./oap-spark-${VERSION}.jar:./oap-common-${VERSION}.jar
-spark.driver.extraClassPath       file://${{PATH_TO_OAP_SPARK_JAR}/oap-spark-${VERSION}.jar:file://${{PATH_TO_OAP_COMMON_JAR}/oap-common-${VERSION}.jar
+spark.files                       file://${{PATH_TO_OAP_SPARK_JAR}/oap-spark-0.8.0-with-spark-2.4.4.jar,file://${{PATH_TO_OAP_COMMON_JAR}/oap-common-0.8.0-with-spark-2.4.4.jar
+spark.executor.extraClassPath     ./oap-spark-0.8.0-with-spark-2.4.4.jar:./oap-common-0.8.0-with-spark-2.4.4.jar
+spark.driver.extraClassPath       file://${{PATH_TO_OAP_SPARK_JAR}/oap-spark-0.8.0-with-spark-2.4.4.jar:file://${{PATH_TO_OAP_COMMON_JAR}/oap-common-0.8.0-with-spark-2.4.4.jar
 ```
 
 ### Use Optane PMem to cache data
