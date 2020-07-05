@@ -16,8 +16,8 @@ public class ChunkOutputStream extends OutputStream implements WritableByteChann
         this.chunkWriter = dataStore.getChunkWriter(name);
     }
 
-    public void write(int b) {
-        throw new RuntimeException("Unsupported Operation");
+    public void write(int b) throws IOException {
+        chunkWriter.write(b);
     }
 
     public void write(byte b[]) throws IOException {
@@ -33,8 +33,8 @@ public class ChunkOutputStream extends OutputStream implements WritableByteChann
      * @param      len   the number of bytes to write.
      * @exception  IOException  if an I/O error occurs.
      */
-    public void write(byte b[], int off, int len) {
-        throw new RuntimeException("Unsupported Operation");
+    public void write(byte b[], int off, int len) throws IOException {
+        chunkWriter.write(b, off, len);
     }
 
 

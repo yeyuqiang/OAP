@@ -15,25 +15,17 @@ public class ChunkInputStream extends InputStream implements ReadableByteChannel
         this.chunkReader = dataStore.getChunkReader(name);
     }
 
-    public int read() {
-        throw new UnsupportedOperationException("Unsupported operation");
+    public int read() throws IOException {
+        return chunkReader.read();
     }
 
     public int read(byte b[]) throws IOException {
         assert(b.length > 0);
-        return chunkReader.read(b);
+        return chunkReader.read(b, 0, b.length);
     }
 
     public int read(byte b[], int off, int len) throws IOException {
-        return this.read(b);
-    }
-
-    public long skip(long n) throws IOException {
-        throw new UnsupportedOperationException("Unsupported operation");
-    }
-
-    public int available() throws IOException {
-        throw new UnsupportedOperationException("Unsupported operation");
+        return chunkReader.read(b, off, len);
     }
 
     public void free() throws IOException {

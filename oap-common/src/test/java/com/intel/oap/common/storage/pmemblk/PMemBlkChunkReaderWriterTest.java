@@ -4,9 +4,9 @@ import com.intel.oap.common.storage.stream.*;
 import com.intel.oap.common.unsafe.PMemBlockPlatform;
 import org.junit.*;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Properties;
 import java.util.Random;
 
@@ -128,5 +128,23 @@ public class PMemBlkChunkReaderWriterTest {
         // assertEquals(maxNum, meta.getTotalChunk());
     }
 
+    @Test
+    public void testSerializeBlock() throws IOException, ClassNotFoundException {
+        byte[] bytesToWrite = new byte[1025];
+        Arrays.fill(bytesToWrite, (byte) 2);
+
+        ChunkOutputStream cos = new ChunkOutputStream(LOGICID, dataStore);
+        BufferedOutputStream bos = new BufferedOutputStream(cos);
+        ObjectOutputStream oos = new ObjectOutputStream(cos);
+        oos.writeObject(bytesToWrite);
+        oos.close();
+
+        ChunkInputStream cis = new ChunkInputStream(LOGICID, dataStore);
+        BufferedInputStream bis = new BufferedInputStream(cis);
+        ObjectInputStream ois = new ObjectInputStream(cis);
+        byte[] readBytes = (byte[]) ois.readObject();
+        ois.close();
+        assertArrayEquals(bytesToWrite, readBytes);
+    }
 
 }
