@@ -233,24 +233,38 @@ object SparkEnv extends Logging {
     var numaNodeId = conf.getInt("spark.executor.numa.id", -1)
     val pmemInitialPaths = conf.get("spark.memory.pmem.initial.path", "").split(",")
     val pmemInitialSize = conf.getSizeAsBytes("spark.memory.pmem.initial.size", 0L)
-    if (!isDriver && pmemInitialPaths.size > 1) {
-      if (numaNodeId == -1) {
-        numaNodeId = executorId.toInt
-      }
-      val path = pmemInitialPaths(numaNodeId % 2)
-      val initPath = path + File.separator + s"executor_${executorId}" + File.pathSeparator
-      val file = new File(initPath)
-      if (file.exists() && file.isFile) {
-        file.delete()
-      }
+    val pmemMode = conf.get("spark.memory.pmem.mode", "AppDirect")
+    val numNum = conf.getInt("spark.yarn.numa.num", 2)
 
-      if (!file.exists()) {
-        file.mkdirs()
-      }
+    if (pmemMode.equals("AppDirect")) {
+      if (!isDriver && pmemInitialPaths.size > 1) {
+        if (numaNodeId == -1) {
+          numaNodeId = executorId.toInt
+        }
+        val path = pmemInitialPaths(numaNodeId % 2)
+        val initPath = path + File.separator + s"executor_${executorId}" + File.pathSeparator
+        val file = new File(initPath)
+        if (file.exists() && file.isFile) {
+          file.delete()
+        }
 
-      require(file.isDirectory(), "PMem directory is required for initialization")
-      PersistentMemoryPlatform.initialize(initPath, pmemInitialSize, 0)
-      logInfo(s"Intel Optane PMem initialized with path: ${initPath}, size: ${pmemInitialSize} ")
+        if (!file.exists()) {
+          file.mkdirs()
+        }
+
+        require(file.isDirectory(), "PMem directory is required for initialization")
+        PersistentMemoryPlatform.initialize(initPath, pmemInitialSize, 0)
+        logInfo(s"Intel Optane PMem initialized with path: ${initPath}, size: ${pmemInitialSize} ")
+      }
+    } else if (pmemMode.equals("KMemDax")) {
+      if (!isDriver) {
+        if (numaNodeId == -1) {
+          numaNodeId = (executorId.toInt + 1) % 2
+        }
+        val daxNodeId = numaNodeId + numNum
+        PersistentMemoryPlatform.setNUMANode(String.valueOf(daxNodeId), String.valueOf(numaNodeId))
+        PersistentMemoryPlatform.initialize()
+      }
     }
 
     // Listener bus is only used on the driver
