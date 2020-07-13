@@ -134,13 +134,11 @@ public class PMemBlkChunkReaderWriterTest {
         Arrays.fill(bytesToWrite, (byte) 2);
 
         ChunkOutputStream cos = new ChunkOutputStream(LOGICID, dataStore);
-        BufferedOutputStream bos = new BufferedOutputStream(cos);
         ObjectOutputStream oos = new ObjectOutputStream(cos);
         oos.writeObject(bytesToWrite);
         oos.close();
 
         ChunkInputStream cis = new ChunkInputStream(LOGICID, dataStore);
-        BufferedInputStream bis = new BufferedInputStream(cis);
         ObjectInputStream ois = new ObjectInputStream(cis);
         byte[] readBytes = (byte[]) ois.readObject();
         ois.close();

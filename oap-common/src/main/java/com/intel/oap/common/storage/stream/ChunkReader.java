@@ -27,7 +27,10 @@ public abstract class ChunkReader {
             if (remainingBuffer.hasRemaining()) {
                 return remainingBuffer.get();
             }
-            loadData();
+            remainingBuffer.clear();
+            int size = loadData();
+            remainingBuffer.limit(size);
+            remainingBuffer.flip();
 
             if (!remainingBuffer.hasRemaining()) {
                 return -1;
@@ -50,8 +53,9 @@ public abstract class ChunkReader {
                 read += length;
             } else {
                 remainingBuffer.clear();
-                remainingBuffer.limit(chunkSize);
-                loadData();
+//                remainingBuffer.limit(chunkSize);
+                int size = loadData();
+                remainingBuffer.limit(size);
                 if (remainingBuffer.position() == 0) {
                     break;
                 }
