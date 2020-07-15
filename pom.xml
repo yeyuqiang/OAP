@@ -44,6 +44,7 @@
     <modules>
         <module>oap-common</module>
         <module>oap-cache/oap</module>
+        <module>oap-spark</module>
     </modules>
 
 </project>

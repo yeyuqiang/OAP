@@ -26,6 +26,7 @@ public class PMemBlockPlatform {
     private static final Logger LOG = LoggerFactory.getLogger(PMemBlockPlatform.class);
     private static final String LIBNAME = "pmblkplatform";
     private static boolean isAvailable = true;
+    private static volatile boolean initialized = false;
 
     static {
         NativeLibraryLoader.load(LIBNAME);
@@ -39,6 +40,15 @@ public class PMemBlockPlatform {
             isAvailable = false;
         }
         return isAvailable;
+    }
+
+    public static void initialize(String path, long elementSize, long poolSize) {
+        synchronized (PMemBlockPlatform.class) {
+            if (!initialized) {
+                create(path, elementSize, poolSize);
+                initialized = true;
+            }
+        }
     }
 
     public static native void create(String path, long elementSize, long poolSize);
