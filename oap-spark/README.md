@@ -18,7 +18,7 @@ Large capacity and high I/O performance of PMem shows better performance than ti
 ## User Guide
 ### Prerequisites
 
-The following are required to configure OAP to use DCPMM cache.
+The following are required to configure OAP to use DCPMM cache in AppDirect mode.
 - DCPMM hardware is successfully deployed on each node in cluster.
 - Directories exposing DCPMM hardware on each socket. For example, on a two socket system the mounted DCPMM directories should appear as `/mnt/pmem0` and `/mnt/pmem1`. Correctly installed DCPMM must be formatted and mounted on every cluster worker node.
 
@@ -61,6 +61,20 @@ The following are required to configure OAP to use DCPMM cache.
    make install
    ```
 
+- For KMem Dax mode, we need to configure PMem as system ram. Kernel 5.1 or above is required to this mode.
+
+   ```
+   daxctl migrate-device-model
+   ndctl create-namespace --mode=devdax --map=mem
+   ndctl list
+   daxctl reconfigure-device dax0.0 --mode=system-ram
+   daxctl reconfigure-device dax1.0 --mode=system-ram
+   daxctl reconfigure-device daxX.Y --mode=system-ram
+   ```
+
+Refer [Memkind KMem](https://github.com/memkind/memkind#kernel) for details.
+
+
 ### Compiling
 
 To build oap spark and oap common, you can run below commands:
@@ -79,6 +93,7 @@ spark.memory.pmem.initial.size [Your Optane PMem size in GB]
 spark.memory.pmem.usable.ratio [from 0 to 1, 0.85 is recommended]
 spark.yarn.numa.enabled true
 spark.yarn.numa.num [Your numa node number]
+spark.memory.pmem.mode [AppDirect | KMemDax]
 
 spark.files                       file://${{PATH_TO_OAP_SPARK_JAR}/oap-spark-0.8.1-with-spark-2.4.4.jar,file://${{PATH_TO_OAP_COMMON_JAR}/oap-common-0.8.1-with-spark-2.4.4.jar
 spark.executor.extraClassPath     ./oap-spark-0.8.1-with-spark-2.4.4.jar:./oap-common-0.8.1-with-spark-2.4.4.jar
