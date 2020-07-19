@@ -33,7 +33,7 @@ import scala.util.Random
 import scala.util.control.NonFatal
 import com.codahale.metrics.{MetricRegistry, MetricSet}
 import com.google.common.io.CountingOutputStream
-import com.intel.oap.common.unsafe.PersistentMemoryPlatform
+
 import org.apache.spark._
 import org.apache.spark.executor.{DataReadMethod, ShuffleWriteMetrics}
 import org.apache.spark.internal.{config, Logging}
@@ -130,45 +130,6 @@ private[spark] class BlockManager(
     numUsableCores: Int)
   extends BlockDataManager with BlockEvictionHandler with Logging {
 
-  val isDriver = executorId == SparkContext.DRIVER_IDENTIFIER
-
-  var numaNodeId = conf.getInt("spark.executor.numa.id", -1)
-  val pmemInitialPaths = conf.get("spark.memory.pmem.initial.path", "").split(",")
-  val pmemInitialSize = conf.getSizeAsBytes("spark.memory.pmem.initial.size", 0L)
-  val pmemMode = conf.get("spark.memory.pmem.mode", "AppDirect")
-  val numNum = conf.getInt("spark.yarn.numa.num", 2)
-
-  if (pmemMode.equals("AppDirect")) {
-    if (!isDriver && pmemInitialPaths.size > 1) {
-      if (numaNodeId == -1) {
-        numaNodeId = executorId.toInt
-      }
-      val path = pmemInitialPaths(numaNodeId % 2)
-      val initPath = path + File.separator + s"executor_${executorId}" + File.pathSeparator
-      val file = new File(initPath)
-      if (file.exists() && file.isFile) {
-        file.delete()
-      }
-
-      if (!file.exists()) {
-        file.mkdirs()
-      }
-
-      require(file.isDirectory(), "PMem directory is required for initialization")
-      PersistentMemoryPlatform.initialize(initPath, pmemInitialSize, 0)
-      logInfo(s"Intel Optane PMem initialized with path: ${initPath}, size: ${pmemInitialSize} ")
-    }
-  } else if (pmemMode.equals("KMemDax")) {
-    if (!isDriver) {
-      if (numaNodeId == -1) {
-        numaNodeId = (executorId.toInt + 1) % 2
-      }
-      val daxNodeId = numaNodeId + numNum
-      PersistentMemoryPlatform.setNUMANode(String.valueOf(daxNodeId), String.valueOf(numaNodeId))
-      PersistentMemoryPlatform.initialize()
-    }
-  }
-
   private[spark] val externalShuffleServiceEnabled =
     conf.get(config.SHUFFLE_SERVICE_ENABLED)
   private val remoteReadNioBufferConversion =
@@ -190,7 +151,7 @@ private[spark] class BlockManager(
   // Actual storage of where blocks are kept
   private[spark] val memoryStore =
     new MemoryStore(conf, blockInfoManager, serializerManager, memoryManager, this)
-  private[spark] val diskStore = new DiskStore(conf, diskBlockManager, securityManager)
+  private[spark] val diskStore = new DiskStore(conf, diskBlockManager, securityManager, executorId)
   memoryManager.setMemoryStore(memoryStore)
 
   // Note: depending on the memory manager, `maxMemory` may actually vary over time.
@@ -483,7 +444,6 @@ private[spark] class BlockManager(
             val allocator = level.memoryMode match {
               case MemoryMode.ON_HEAP => ByteBuffer.allocate _
               case MemoryMode.OFF_HEAP => Platform.allocateDirectBuffer _
-              case MemoryMode.PMEM => PersistentMemoryPlatform.allocateVolatileDirectBuffer _
             }
             new EncryptedBlockData(tmpFile, blockSize, conf, key).toChunkedByteBuffer(allocator)
 
@@ -648,7 +608,8 @@ private[spark] class BlockManager(
               val diskValues = serializerManager.dataDeserializeStream(
                 blockId,
                 diskData.toInputStream())(info.classTag)
-              maybeCacheDiskValuesInMemory(info, blockId, level, diskValues)
+              // maybeCacheDiskValuesInMemory(info, blockId, level, diskValues)
+              diskValues
             } else {
               val stream = maybeCacheDiskBytesInMemory(info, blockId, level, diskData)
                 .map { _.toInputStream(dispose = false) }
@@ -1305,7 +1266,6 @@ private[spark] class BlockManager(
           val allocator = level.memoryMode match {
             case MemoryMode.ON_HEAP => ByteBuffer.allocate _
             case MemoryMode.OFF_HEAP => Platform.allocateDirectBuffer _
-            case MemoryMode.PMEM => PersistentMemoryPlatform.allocateVolatileDirectBuffer _
           }
           val putSucceeded = memoryStore.putBytes(blockId, diskData.size, level.memoryMode, () => {
             // https://issues.apache.org/jira/browse/SPARK-6076
