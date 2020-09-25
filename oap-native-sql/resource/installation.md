@@ -14,14 +14,14 @@ export SPARK_HOME=`pwd`/spark-3.0.0-bin-hadoop2.7
 
 ## Install arrow 0.17.0 &  Native-SQL 
 
-We have provided a Conda package which will automatically install dependencies needed by OAP, you can refer to [OAP-Installation-Guide](../../docs/OAP-Installation-Guide.md) for more information. Once finished, you will get arrow 0.17.0 dependencies installed by Conda, and the compiled `spark-columnar-core jar` will be put into dir `/root/miniconda2/envs/${YOUR_ENV_NAME}/oap_jars/`
+We have provided a Conda package which will automatically install dependencies needed by OAP, you can refer to [OAP-Installation-Guide](../../docs/OAP-Installation-Guide.md) for more information. Once finished, you will get arrow 0.17.0 dependencies installed by Conda, and the compiled `spark-columnar-core` & `spark-arrow-datasource ` jar will be put into dir   `/root/miniconda2/envs/oapenv/oap_jars/`
 
 When you finish [OAP-Installation-Guide](../../docs/OAP-Installation-Guide.md) , just jump to [Spark Configurations for Native SQL Engine](#spark-configurations-for-native-sql-engine).
 
 ### Manully Install arrow 0.17.0 
 Step 1. Install arrow 0.17.0 dependencies
 ```
-git clone https://github.com/intel-bigdata/arrow && cd arrow & git checkout branch-0.17.0-oap-0.9
+git clone https://github.com/intel-bigdata/arrow && cd arrow && git checkout branch-0.17.0-oap-0.9
 vim ci/conda_env_gandiva.yml 
 clangdev=7
 llvmdev=7
@@ -86,8 +86,8 @@ spark.sql.extensions com.intel.oap.ColumnarPlugin
 spark.shuffle.manager org.apache.spark.shuffle.sort.ColumnarShuffleManager
 
 # note native sql engine depends on arrow data source
-spark.driver.extraClassPath /root/miniconda2/envs/${YOUR_ENV_NAME}/oap_jars/spark-columnar-core-0.9.0-jar-with-dependencies.jar:/root/miniconda2/envs/${YOUR_ENV_NAME}/oap_jars/spark-arrow-datasource-0.9.0-jar-with-dependencies.jar
-spark.executor.extraClassPath /root/miniconda2/envs/${YOUR_ENV_NAME}/oap_jars/spark-columnar-core-0.9.0-jar-with-dependencies.jar:/root/miniconda2/envs/${YOUR_ENV_NAME}/oap_jars/spark-arrow-datasource-0.9.0-jar-with-dependencies.jar
+spark.driver.extraClassPath /root/miniconda2/envs/oapenv/oap_jars/spark-columnar-core-0.9.0-jar-with-dependencies.jar:/root/miniconda2/envs/oapenv/oap_jars/spark-arrow-datasource-0.9.0-jar-with-dependencies.jar
+spark.executor.extraClassPath /root/miniconda2/envs/oapenv/oap_jars/spark-columnar-core-0.9.0-jar-with-dependencies.jar:/root/miniconda2/envs/oapenv/oap_jars/spark-arrow-datasource-0.9.0-jar-with-dependencies.jar
 
 ######
 ```
